@@ -12,7 +12,7 @@ export const getVotes = (req: Request, res: Response) => {
 };
 
 export const castVote = (req: Request, res: Response) => {
-  const candidateName = Object.keys(req.body.candidate)[0] as keyof Votes;
+  const candidateName = req.body.candidate as keyof Votes;
 
   if (votes[candidateName] !== undefined) {
     votes[candidateName] += 1;
