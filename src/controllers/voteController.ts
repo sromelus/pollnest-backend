@@ -1,22 +1,31 @@
 import { Request, Response } from 'express';
 
-type Votes = {
-  trump: number;
-  kamala: number;
+interface Votes {
+  votedUser: object;
+  voterEthnicity: string;
+  voterGender: string;
+  candidate: string;
 };
 
-let votes: Votes = { trump: 0, kamala: 0 };
+interface VoteTally {
+  [key: string]: number;
+}
+
+let votes: Votes[] = [];
+let voteTally: VoteTally = { kamala: 0, trump: 0 };
 
 export const getVotes = (req: Request, res: Response) => {
-  res.json(votes);
+    res.json(voteTally);
 };
 
 export const castVote = (req: Request, res: Response) => {
-  const candidateName = req.body.candidate as keyof Votes;
+  const { votedUser, candidate, voterEthnicity, voterGender } = req.body as Votes;
 
-  if (votes[candidateName] !== undefined) {
-    votes[candidateName] += 1;
-    res.status(200).json({ success: true, votes });
+  if (req.body !== undefined && candidate !== '') {
+    votes.push({ votedUser, candidate, voterEthnicity, voterGender });
+    voteTally[candidate] += 1;
+
+    res.status(200).json({ success: true, voteTally });
   } else {
     res.status(400).json({ success: false, message: 'Invalid candidate' });
   }
