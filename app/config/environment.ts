@@ -1,20 +1,13 @@
 export const envConfig = {
   development: {
-    allowedOrigins: ['http://localhost:3000'],
+    allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
   },
   staging: {
-    allowedOrigins: [
-      'http://staging.yourapp.com',
-      'https://staging.yourapp.com'
-    ],
+    allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || [],
   },
   production: {
-    allowedOrigins: [
-      'http://yourapp.com',
-      'https://yourapp.com'
-    ],
+    allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || [],
   },
 };
-
 
 export type Environment = keyof typeof envConfig;
