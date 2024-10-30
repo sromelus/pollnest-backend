@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 
 interface Votes {
-  votedUser: object;
   voterEthnicity: string;
   voterGender: string;
   candidate: string;
@@ -24,7 +23,7 @@ export const getVotes = (req: Request, res: Response) => {
 
 export const castVote = (req: Request, res: Response) => {
   let sessionId = req.cookies?.sessionId;
-  const { votedUser, candidate, voterEthnicity, voterGender } = req.body as Votes;
+  const { candidate, voterEthnicity, voterGender } = req.body as Votes;
 
   if (!sessionId) {
     sessionId = uuidv4();
@@ -36,7 +35,7 @@ export const castVote = (req: Request, res: Response) => {
   }
 
   if (req.body !== undefined && candidate !== '') {
-      votes.push({ votedUser, candidate, voterEthnicity, voterGender });
+      votes.push({ candidate, voterEthnicity, voterGender });
       voteTally[candidate] += 1;
 
       res.cookie('sessionId', sessionId, {
