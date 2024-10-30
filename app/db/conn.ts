@@ -1,6 +1,6 @@
 import { MongoClient, Db } from "mongodb";
 
-const connectionString = process.env.MONGODB_URI;
+const connectionString: string | undefined = process.env.MONGODB_URI;
 
 if (!connectionString) {
   throw new Error("MONGODB_URI environment variable is not set");
@@ -12,9 +12,11 @@ let db: Db | undefined;
 async function connectToDatabase() {
   try {
     if (!client) {
-      client = new MongoClient(connectionString);
+      client = new MongoClient(connectionString as string);
       await client.connect();
-      db = client.db("sample_training");
+
+      const dbName = new URL(connectionString as string).pathname.slice(1);
+      db = client.db(dbName);
       console.log("Successfully connected to MongoDB.");
     }
     return db;

@@ -14,7 +14,7 @@ const config = envConfig[ENV as Environment] || envConfig.development;
 
 const startServer = async () => {
   try {
-    // const db = await connectToDatabase();
+    const db = await connectToDatabase();
 
     app.use(cors({
       origin: config.allowedOrigins,
