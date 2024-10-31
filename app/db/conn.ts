@@ -1,38 +1,23 @@
-import { MongoClient, Db } from "mongodb";
+import mongoose, { ConnectOptions } from 'mongoose';
 
-const connectionString: string | undefined = process.env.MONGODB_URI;
+const connectionString = process.env.MONGODB_URI;
 
 if (!connectionString) {
   throw new Error("MONGODB_URI environment variable is not set");
 }
 
-let client: MongoClient | undefined;
-let db: Db | undefined;
+mongoose.connect(connectionString, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+} as ConnectOptions)
+.then(() => console.log('Connected to MongoDB'))
+.catch(err => console.error('MongoDB connection error:', err));
 
-async function connectToDatabase() {
-  try {
-    if (!client) {
-      client = new MongoClient(connectionString as string);
-      await client.connect();
-
-      const dbName = new URL(connectionString as string).pathname.slice(1);
-      db = client.db(dbName);
-      console.log("Successfully connected to MongoDB.");
-    }
-    return db;
-  } catch (error) {
-    console.error("MongoDB connection error:", error);
-    throw error;
-  }
-}
-
-// Handle graceful shutdown for both SIGINT and SIGTERM
+// Handle graceful shutdown
 const shutdown = async () => {
   try {
-    if (client) {
-      await client.close();
-      console.log('MongoDB connection closed.');
-    }
+    await mongoose.connection.close();
+    console.log('MongoDB connection closed.');
     process.exit(0);
   } catch (error) {
     console.error('Error closing MongoDB connection:', error);
@@ -43,4 +28,5 @@ const shutdown = async () => {
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
-export default connectToDatabase;
+const dbConnection = mongoose.connection;
+export default dbConnection;
