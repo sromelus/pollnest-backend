@@ -3,7 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import voteRoutes from './routes/voteRoutes';
 import './loadEnvironment';
-import connectToDatabase from '../db/conn';
+import dbConnection from '../db/conn';
 import { envConfig, Environment } from '../config/environment';
 import createLogger from '../config/logger';
 
@@ -24,9 +24,9 @@ const config = envConfig[ENV as Environment] || envConfig.development;
 const startServer = async () => {
   try {
     logger.debug('Attempting database connection');
-    const db = await connectToDatabase();
+    await dbConnection.asPromise();
     logger.info('Database connection established', {
-      database: db?.databaseName
+      database: dbConnection.db?.databaseName
     });
 
     app.use(cors({
@@ -71,7 +71,6 @@ const startServer = async () => {
     process.exit(1);
   }
 };
-
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught exception', {
@@ -89,5 +88,6 @@ process.on('unhandledRejection', (reason, promise) => {
   });
   process.exit(1);
 });
+
 
 startServer();
