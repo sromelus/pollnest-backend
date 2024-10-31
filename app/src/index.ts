@@ -5,7 +5,7 @@ import voteRoutes from './routes/voteRoutes';
 import './loadEnvironment';
 import dbConnection from '../db/conn';
 import { envConfig, Environment } from '../config/environment';
-import createLogger from '../config/logger';
+import { createLogger, requestLogger } from '../config/logger';
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -50,6 +50,8 @@ const startServer = async () => {
 
     app.use(cookieParser());
     app.use(express.json());
+    app.use(requestLogger);
+
     app.use('/api/votes', voteRoutes);
 
     app.listen(PORT, () => {

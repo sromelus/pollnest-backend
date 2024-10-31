@@ -1,6 +1,9 @@
 import winston from 'winston';
+import morgan from 'morgan';
 
-const createLogger = (ENV: string) => {
+export const requestLogger = morgan(':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"');
+
+export const createLogger = (ENV: string) => {
   return winston.createLogger({
     level: ENV === 'production' ? 'info' : 'debug',
     format: winston.format.combine(
@@ -20,5 +23,3 @@ const createLogger = (ENV: string) => {
     ]
   });
 };
-
-export default createLogger;
