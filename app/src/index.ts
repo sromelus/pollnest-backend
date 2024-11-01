@@ -6,6 +6,7 @@ import './loadEnvironment';
 import dbConnection from '../db/conn';
 import { envConfig, Environment } from '../config/environment';
 import { createLogger, requestLogger } from '../config/logger';
+import { maintenanceMiddleware } from '../middlewares/maintenanceMiddleware';
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -36,6 +37,8 @@ const startServer = async () => {
     logger.info('CORS configured', {
       origins: config.allowedOrigins
     });
+
+    app.use(maintenanceMiddleware as express.RequestHandler);
 
     // Add error logging middleware
     app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {

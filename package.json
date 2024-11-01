@@ -4,9 +4,11 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
+    "build": "tsc",
+    "deploy": "yarn build && google-cloud-sdk/bin/gcloud app deploy",
     "start:dev": "NODE_ENV=development nodemon app/src/index.ts",
     "start:staging": "NODE_ENV=staging ts-node app/src/index.ts",
-    "start:prod": "NODE_ENV=production ts-node app/src/index.ts"
+    "start": "NODE_ENV=production ts-node app/src/index.ts"
   },
   "dependencies": {
     "@types/cookie-parser": "^1.4.7",
@@ -18,7 +20,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "express-rate-limit": "^7.4.1",
-    "geoip-lite": "^1.4.10",
+    "fast-geoip": "^1.1.88",
     "mongoose": "^8.7.3",
     "morgan": "^1.10.0",
     "uuid": "^11.0.2",

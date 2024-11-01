@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import Vote from '../models/Vote';
 import VoteTally, { Candidate } from '../models/VoteTally';
-import geoip from 'geoip-lite';
+import geoip from 'fast-geoip';
 
 interface Votes {
   voterEthnicity: string;
@@ -16,7 +16,7 @@ export const getVotes = async (req: Request, res: Response) => {
     const hasVoted = await Vote.exists({ voterId: sessionId });
     const hasVotedByIp = await Vote.exists({ voterIp: req.ip });
 
-    const geo = geoip.lookup(req.ip as string);
+    const geo = await geoip.lookup(req.ip as string);
     const voterCountry = geo?.country;
     const isRequestFromOutsideUS = voterCountry !== 'US';
 
@@ -47,16 +47,16 @@ export const castVote = async (req: Request, res: Response) => {
         const hasVotedByIp = await Vote.exists({ voterIp: req.ip });
 
         if (hasVoted || hasVotedByIp) {
-            return res.status(403).send({ success: false, message: 'User has already voted' });
+            return res.status(403).send({ success: false, message: 'User has already voted.' });
         }
 
         if (!voterEthnicity || !voterGender) {
-            return res.status(400).send({ success: false, message: 'Voter ethnicity and gender are required' });
+            return res.status(400).send({ success: false, message: 'Voter ethnicity and gender are required.' });
         }
 
-        const geo = geoip.lookup(req.ip as string);
+        const geo = await geoip.lookup(req.ip as string);
         if (!geo) {
-            return res.status(400).send({ success: false, message: 'Your vote is not registered on the server, Sorry! Unable to determine voter location' })
+            return res.status(400).send({ success: false, message: 'We only accept vote from USA, Your vote is not registered on the server, Sorry! Unable to determine voter location.' })
         }
 
         const voterCountry = geo?.country;
