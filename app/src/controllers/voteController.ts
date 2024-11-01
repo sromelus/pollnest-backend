@@ -13,10 +13,11 @@ interface Votes {
 
 export const getVotes = async (req: Request, res: Response) => {
     let sessionId = req.cookies?.sessionId;
+    const clientIp = req.ip;
     const hasVoted = await Vote.exists({ voterId: sessionId });
-    const hasVotedByIp = await Vote.exists({ voterIp: req.ip });
+    const hasVotedByIp = await Vote.exists({ voterIp: clientIp });
 
-    const geo = await geoip.lookup(req.ip as string);
+    const geo = await geoip.lookup(clientIp as string);
     const voterCountry = geo?.country;
     const isRequestFromOutsideUS = voterCountry !== 'US';
 
@@ -33,6 +34,8 @@ export const getVotes = async (req: Request, res: Response) => {
 export const castVote = async (req: Request, res: Response) => {
     try {
         let sessionId = req.cookies?.sessionId;
+        const clientIp = req.ip;
+
         const { candidate, voterEthnicity, voterGender } = req.body as Votes;
 
         if (!Object.values(Candidate).includes(candidate as Candidate)) {
@@ -44,7 +47,7 @@ export const castVote = async (req: Request, res: Response) => {
         }
 
         const hasVoted = await Vote.exists({ voterId: sessionId });
-        const hasVotedByIp = await Vote.exists({ voterIp: req.ip });
+        const hasVotedByIp = await Vote.exists({ voterIp: clientIp });
 
         if (hasVoted || hasVotedByIp) {
             return res.status(403).send({ success: false, message: 'User has already voted.' });
@@ -54,7 +57,7 @@ export const castVote = async (req: Request, res: Response) => {
             return res.status(400).send({ success: false, message: 'Voter ethnicity and gender are required.' });
         }
 
-        const geo = await geoip.lookup(req.ip as string);
+        const geo = await geoip.lookup(clientIp as string);
         if (!geo) {
             return res.status(400).send({ success: false, message: 'We only accept vote from USA, Your vote is not registered on the server, Sorry! Unable to determine voter location.' })
         }
@@ -70,7 +73,7 @@ export const castVote = async (req: Request, res: Response) => {
         await Vote.create({
             candidate,
             voterId: sessionId,
-            voterIp: req.ip,
+            voterIp: clientIp,
             voterCountry,
             voterRegion,
             voterCity,

@@ -55,6 +55,8 @@ const startServer = async () => {
     app.use(express.json());
     app.use(requestLogger);
 
+    app.set('trust proxy', true);
+
     app.use('/api/votes', voteRoutes);
 
     app.listen(PORT, () => {
