@@ -1,17 +1,38 @@
 import mongoose, { ConnectOptions } from 'mongoose';
+import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
 
-const connectionString = process.env.MONGODB_URI;
+async function getMongoUri() {
+    const secretName = process.env.MONGODB_URI;
 
-if (!connectionString) {
-  throw new Error("MONGODB_URI environment variable is not set");
+    const client = new SecretManagerServiceClient();
+    const [version] = await client.accessSecretVersion({
+        name: secretName
+    });
+    return version.payload?.data?.toString();
 }
 
-mongoose.connect(connectionString, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-} as ConnectOptions)
-.then(() => console.log('Connected to MongoDB'))
-.catch(err => console.error('MongoDB connection error:', err));
+async function connectToDatabase() {
+    let connectionString;
+
+    if (process.env.NODE_ENV === 'production') {
+        connectionString = await getMongoUri();
+    } else {
+        connectionString = process.env.MONGODB_URI;
+    }
+
+    if (!connectionString) {
+        throw new Error("MONGODB_URI environment variable is not set");
+    }
+
+    return mongoose.connect(connectionString, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+    } as ConnectOptions);
+}
+
+connectToDatabase()
+    .then(() => console.log('Connected to MongoDB'))
+    .catch(err => console.error('MongoDB connection error:', err));
 
 // Handle graceful shutdown
 const shutdown = async () => {

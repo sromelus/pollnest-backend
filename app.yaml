@@ -3,9 +3,10 @@ runtime: nodejs20
 env_variables:
   NODE_ENV: production
   PORT: 8080
-  MONGODB_URI: projects/23887439352/secrets/MONGODB_URI
+  MONGODB_URI: projects/23887439352/secrets/MONGODB_URI/versions/latest
   ALLOWED_ORIGINS: https://www.pollnest.com
   MAINTENANCE_MODE: true
+
 
 instance_class: F2
 
