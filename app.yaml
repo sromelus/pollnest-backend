@@ -3,10 +3,11 @@ runtime: nodejs20
 env_variables:
   NODE_ENV: production
   PORT: 8080
-  MONGODB_URI: YOUR_MONGODB_URI
-  ALLOWED_ORIGINS: https://www.pollnest.com/
+  MONGODB_URI: projects/23887439352/secrets/MONGODB_URI
+  ALLOWED_ORIGINS: https://www.pollnest.com
+  MAINTENANCE_MODE: true
 
-instance_class: F1
+instance_class: F2
 
 automatic_scaling:
   target_cpu_utilization: 0.65
