@@ -6,7 +6,7 @@
   "scripts": {
     "start:dev": "NODE_ENV=development nodemon app/src/index.ts",
     "start:staging": "NODE_ENV=staging ts-node app/src/index.ts",
-    "start:prod": "NODE_ENV=production ts-node app/src/index.ts"
+    "start": "NODE_ENV=production ts-node app/src/index.ts"
   },
   "dependencies": {
     "@types/cookie-parser": "^1.4.7",
