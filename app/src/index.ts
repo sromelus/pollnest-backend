@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import voteRoutes from './routes/voteRoutes';
+import healthRoutes from './routes/healthRoutes';
 import './loadEnvironment';
 import dbConnection from '../db/conn';
 import { envConfig, Environment } from '../config/environment';
@@ -56,6 +57,8 @@ const startServer = async () => {
     app.use(requestLogger);
 
     app.set('trust proxy', true);
+
+    app.use('/health', healthRoutes);
 
     app.use('/api/votes', voteRoutes);
 
