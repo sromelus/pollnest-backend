@@ -38,7 +38,7 @@ const startServer = async () => {
       origins: config.allowedOrigins
     });
 
-    app.use(maintenanceMiddleware as express.RequestHandler);
+    app.use(maintenanceMiddleware);
 
     // Add error logging middleware
     app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
