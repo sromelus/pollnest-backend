@@ -12,8 +12,9 @@ interface Votes {
 };
 
 const getClientIp = (req: Request): string => {
-    return (req.headers['x-real-ip'] ||
-            req.headers['x-forwarded-for'] ||
+    return (req.headers['X-Appengine-User-Ip'] ||
+            req.headers['X-Forwarded-For'] ||
+            req.headers['X-Real-Ip'] ||
             req.socket.remoteAddress ||
             req.ip) as string;
 };
