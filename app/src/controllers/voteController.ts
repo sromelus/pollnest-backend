@@ -22,6 +22,14 @@ const getClientIp = (req: Request): string => {
 export const getVotes = async (req: Request, res: Response) => {
     let sessionId = req.cookies?.sessionId;
     const clientIp = getClientIp(req);
+    console.log("**************************************************", clientIp)
+    console.log("**************************************************", clientIp)
+    console.log("**************************************************", clientIp)
+    console.log("**************************************************", clientIp)
+    console.log("**************************************************", clientIp)
+    console.log("**************************************************", clientIp)
+    console.log("**************************************************", clientIp)
+    console.log("**************************************************", clientIp)
 
     const hasVoted = await Vote.exists({ voterId: sessionId });
     const hasVotedByIp = await Vote.exists({ voterIp: clientIp });
