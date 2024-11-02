@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import Vote from '../models/Vote';
 import VoteTally, { Candidate } from '../models/VoteTally';
-import geoip from 'fast-geoip';
 
 interface Votes {
   voterEthnicity: string;
@@ -11,32 +10,30 @@ interface Votes {
   voterId: string;
 };
 
-const getClientIp = (req: Request): string => {
-    return (req.headers['X-Appengine-User-Ip'] ||
-            req.headers['X-Forwarded-For'] ||
-            req.headers['X-Real-Ip'] ||
-            req.socket.remoteAddress ||
-            req.ip) as string;
+interface ClientInfo {
+  ip: string;
+  city?: string;
+  region?: string;
+  country?: string;
+}
+
+const getClientInfo = (req: Request): ClientInfo => {
+    return {
+        ip: (req.headers['x-appengine-user-ip'] || req.headers['x-forwarded-for'] || req.ip) as string,
+        city: req.headers['x-appengine-city'] as string,
+        region: req.headers['x-appengine-region'] as string,
+        country: req.headers['x-appengine-country'] as string,
+    };
 };
 
 export const getVotes = async (req: Request, res: Response) => {
     let sessionId = req.cookies?.sessionId;
-    const clientIp = getClientIp(req);
-    console.log("**************************************************", clientIp)
-    console.log("**************************************************", clientIp)
-    console.log("**************************************************", clientIp)
-    console.log("**************************************************", clientIp)
-    console.log("**************************************************", clientIp)
-    console.log("**************************************************", clientIp)
-    console.log("**************************************************", clientIp)
-    console.log("**************************************************", clientIp)
+    const clientInfo = getClientInfo(req);
 
     const hasVoted = await Vote.exists({ voterId: sessionId });
-    const hasVotedByIp = await Vote.exists({ voterIp: clientIp });
+    const hasVotedByIp = await Vote.exists({ voterIp: clientInfo.ip });
 
-    const geo = await geoip.lookup(clientIp as string);
-    const voterCountry = geo?.country;
-    const isRequestFromOutsideUS = voterCountry !== 'US';
+    const isRequestFromOutsideUS = clientInfo.country !== 'US';
 
     const voteTally = await VoteTally.find().lean();
 
@@ -51,7 +48,7 @@ export const getVotes = async (req: Request, res: Response) => {
 export const castVote = async (req: Request, res: Response) => {
     try {
         let sessionId = req.cookies?.sessionId;
-        const clientIp = getClientIp(req);
+        const clientInfo = getClientInfo(req);
 
         const { candidate, voterEthnicity, voterGender } = req.body as Votes;
 
@@ -64,7 +61,7 @@ export const castVote = async (req: Request, res: Response) => {
         }
 
         const hasVoted = await Vote.exists({ voterId: sessionId });
-        const hasVotedByIp = await Vote.exists({ voterIp: clientIp });
+        const hasVotedByIp = await Vote.exists({ voterIp: clientInfo.ip });
 
         if (hasVoted || hasVotedByIp) {
             return res.status(403).send({ success: false, message: 'User has already voted.' });
@@ -74,14 +71,13 @@ export const castVote = async (req: Request, res: Response) => {
             return res.status(400).send({ success: false, message: 'Voter ethnicity and gender are required.' });
         }
 
-        const geo = await geoip.lookup(clientIp as string);
-        if (!geo) {
-            return res.status(400).send({ success: false, message: 'We only accept vote from USA, Your vote is not registered on the server, Sorry! Unable to determine voter location.' })
-        }
+        const voterCountry = clientInfo.country?.toUpperCase();
+        const voterRegion = clientInfo.region?.toUpperCase();
+        const voterCity = clientInfo.city?.toUpperCase();
 
-        const voterCountry = geo?.country;
-        const voterRegion = geo?.region;
-        const voterCity = geo?.city;
+        if (!voterCountry) {
+            return res.status(400).send({ success: false, message: 'Unable to determine voter location.' });
+        }
 
         if (voterCountry !== 'US') {
             return res.status(403).send({ success: false, message: 'Voting is only allowed from the United States, Sorry!' });
@@ -90,7 +86,7 @@ export const castVote = async (req: Request, res: Response) => {
         await Vote.create({
             candidate,
             voterId: sessionId,
-            voterIp: clientIp,
+            voterIp: clientInfo.ip,
             voterCountry,
             voterRegion,
             voterCity,
