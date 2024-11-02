@@ -11,9 +11,17 @@ interface Votes {
   voterId: string;
 };
 
+const getClientIp = (req: Request): string => {
+    return (req.headers['x-real-ip'] ||
+            req.headers['x-forwarded-for'] ||
+            req.socket.remoteAddress ||
+            req.ip) as string;
+};
+
 export const getVotes = async (req: Request, res: Response) => {
     let sessionId = req.cookies?.sessionId;
-    const clientIp = req.ip;
+    const clientIp = getClientIp(req);
+
     const hasVoted = await Vote.exists({ voterId: sessionId });
     const hasVotedByIp = await Vote.exists({ voterIp: clientIp });
 
@@ -34,7 +42,7 @@ export const getVotes = async (req: Request, res: Response) => {
 export const castVote = async (req: Request, res: Response) => {
     try {
         let sessionId = req.cookies?.sessionId;
-        const clientIp = req.ip;
+        const clientIp = getClientIp(req);
 
         const { candidate, voterEthnicity, voterGender } = req.body as Votes;
 
