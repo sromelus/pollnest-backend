@@ -34,7 +34,7 @@ export const getVotes = async (req: Request, res: Response) => {
     const hasVoted = await Vote.exists({ voterId: sessionId });
     const hasVotedByIp = await Vote.exists({ voterIp: clientInfo.ip });
 
-    const isRequestFromOutsideUS = false; // clientInfo.country !== 'US';
+    const isRequestFromOutsideUS = clientInfo.country !== 'US';
 
     const voteTally = await VoteTally.find().lean();
 
