@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import Vote from '../models/Vote';
 import VoteTally, { Candidate } from '../models/VoteTally';
+import { broadcastVoteUpdate } from '../index';
 
 interface Votes {
   voterEthnicity: string;
@@ -52,10 +53,6 @@ export const castVote = async (req: Request, res: Response) => {
 
         const { candidate, voterEthnicity, voterGender } = req.body as Votes;
 
-        if (!Object.values(Candidate).includes(candidate as Candidate)) {
-            return res.status(400).send({ success: false, message: 'Invalid candidate. Must be either kamala or trump' });
-        }
-
         if (!sessionId) {
             sessionId = uuidv4();
         }
@@ -65,10 +62,6 @@ export const castVote = async (req: Request, res: Response) => {
 
         if (hasVoted || hasVotedByIp) {
             return res.status(403).send({ success: false, message: 'User has already voted.' });
-        }
-
-        if (!voterEthnicity || !voterGender) {
-            return res.status(400).send({ success: false, message: 'Voter ethnicity and gender are required.' });
         }
 
         const voterCountry = clientInfo.country?.toUpperCase();
@@ -112,7 +105,11 @@ export const castVote = async (req: Request, res: Response) => {
             maxAge: 1000 * 60 * 60 * 24 * 60,
             sameSite: 'none',
         });
+
         res.status(200).send({ success: true, voteTally: tallyObject });
+
+        // Broadcast updated tally to all WebSocket clients
+        broadcastVoteUpdate({ success: true, voteTally: tallyObject });
     } catch (error) {
         console.error('Error casting vote:', error);
         res.status(500).send({ success: false, message: 'Internal server error' });

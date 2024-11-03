@@ -1,6 +1,7 @@
 import { RequestHandler, Router } from 'express';
 import { getVotes, castVote } from '../controllers/voteController';
 import rateLimit from 'express-rate-limit';
+import { validateVote } from '../../middlewares/validateVote';
 
 const router = Router();
 
@@ -16,6 +17,6 @@ const voteLimiter = rateLimit({
 });
 
 router.get('/', getVotesLimiter, getVotes);
-router.post('/', voteLimiter, castVote as RequestHandler);
+router.post('/', voteLimiter, validateVote, castVote as RequestHandler);
 
 export default router;
