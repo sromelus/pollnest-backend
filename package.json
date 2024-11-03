@@ -15,17 +15,20 @@
     "@types/cookie-parser": "^1.4.7",
     "@types/geoip-lite": "^1.4.4",
     "@types/morgan": "^1.9.9",
+    "@types/ws": "^8.5.13",
     "axios": "^1.7.7",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "express-rate-limit": "^7.4.1",
+    "express-validator": "^7.2.0",
     "fast-geoip": "^1.1.88",
     "mongoose": "^8.7.3",
     "morgan": "^1.10.0",
     "uuid": "^11.0.2",
-    "winston": "^3.15.0"
+    "winston": "^3.15.0",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

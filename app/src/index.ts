@@ -8,6 +8,8 @@ import dbConnection from '../db/conn';
 import { envConfig, Environment } from '../config/environment';
 import { createLogger, requestLogger } from '../config/logger';
 import { maintenanceMiddleware } from '../middlewares/maintenanceMiddleware';
+import { Server } from 'http';
+import WebSocket, { WebSocketServer } from 'ws';
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -22,6 +24,17 @@ logger.info('Initializing server', {
 });
 
 const config = envConfig[ENV as Environment] || envConfig.development;
+
+const server = new Server(app);
+const wss = new WebSocketServer({ server });
+
+const broadcastVoteUpdate = (data: any) => {
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(data));
+    }
+  });
+};
 
 const startServer = async () => {
   try {
@@ -62,7 +75,7 @@ const startServer = async () => {
 
     app.use('/api/votes', voteRoutes);
 
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       logger.info('Server started successfully', {
         port: PORT,
         environment: ENV,
@@ -81,6 +94,12 @@ const startServer = async () => {
     process.exit(1);
   }
 };
+
+// WebSocket error handling
+wss.on('error', (error) => {
+  logger.error('WebSocket error', { error: error.message });
+});
+
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught exception', {
@@ -101,3 +120,5 @@ process.on('unhandledRejection', (reason, promise) => {
 
 
 startServer();
+
+export { broadcastVoteUpdate };

@@ -5,7 +5,7 @@ export const maintenanceMiddleware: RequestHandler = (
   res: Response,
   next: NextFunction
 ): void => {
-  if (process.env.MAINTENANCE_MODE === 'true' || true) {
+  if (process.env.MAINTENANCE_MODE === 'true') {
     res.status(503).json({
       error: 'Service Temporarily Unavailable',
       message: process.env.MAINTENANCE_MESSAGE || 'The server is under maintenance. Please try again later.'
