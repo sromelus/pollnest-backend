@@ -20,6 +20,25 @@ interface ClientInfo {
   country?: string;
 }
 
+const chatMessages: string[] = [];
+
+const handleChatMessage = (message: string, arr = chatMessages) => {
+    message = message.trim();
+
+    if (!message) {
+        return;
+    }
+
+    if (chatMessages.length > 10) {
+        chatMessages.shift();
+    }
+    const cleanedMessage = profanity.censor(message);
+    chatMessages.push(cleanedMessage);
+
+    return arr;
+}
+
+
 const getClientInfo = (req: Request): ClientInfo => {
     return {
         ip: (req.headers['x-appengine-user-ip'] || req.headers['x-forwarded-for'] || req.ip) as string,
@@ -45,7 +64,7 @@ export const getVotes = async (req: Request, res: Response) => {
       return acc;
     }, {} as Record<string, number>);
 
-    res.send({ voteTally: tallyObject, visitedUser: { disabledVote: hasVoted || hasVotedByIp, isRequestFromOutsideUS }});
+    res.send({ voteTally: tallyObject, visitedUser: { disabledVote: hasVoted || hasVotedByIp, isRequestFromOutsideUS }, chatMessages });
 };
 
 export const castVote = async (req: Request, res: Response) => {
@@ -108,13 +127,23 @@ export const castVote = async (req: Request, res: Response) => {
             sameSite: 'none',
         });
 
-        const cleanedMessage = profanity.censor(chatMessage as string);
-        res.status(200).send({ success: true, voteTally: tallyObject, chatMessage: cleanedMessage });
+        const chatMessages = handleChatMessage(chatMessage as string);
+
+        res.status(200).send({ success: true, voteTally: tallyObject, chatMessages });
 
         // Broadcast updated tally to all WebSocket clients
-        broadcastVoteUpdate({ success: true, voteTally: tallyObject, chatMessage: cleanedMessage });
+        broadcastVoteUpdate({ success: true, voteTally: tallyObject, chatMessages });
     } catch (error) {
         console.error('Error casting vote:', error);
         res.status(500).send({ success: false, message: 'Internal server error' });
     }
+};
+
+export const postMessage = async (req: Request, res: Response) => {
+    const { chatMessage } = req.body;
+
+    const chatMessages = handleChatMessage(chatMessage as string);
+
+    res.status(200).send({ success: true });
+    broadcastVoteUpdate({ success: true, chatMessages });
 };
