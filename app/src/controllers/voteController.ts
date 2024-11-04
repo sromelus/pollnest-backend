@@ -108,10 +108,10 @@ export const castVote = async (req: Request, res: Response) => {
             sameSite: 'none',
         });
 
-        res.status(200).send({ success: true, voteTally: tallyObject });
+        const cleanedMessage = profanity.censor(chatMessage as string);
+        res.status(200).send({ success: true, voteTally: tallyObject, chatMessage: cleanedMessage });
 
         // Broadcast updated tally to all WebSocket clients
-        const cleanedMessage = profanity.censor(chatMessage as string);
         broadcastVoteUpdate({ success: true, voteTally: tallyObject, chatMessage: cleanedMessage });
     } catch (error) {
         console.error('Error casting vote:', error);
