@@ -86,6 +86,35 @@ const startServer = async () => {
         memoryUsage: process.memoryUsage()
       });
     });
+
+    const gracefulShutdown = async () => {
+      console.log('\nShutdown signal received: closing HTTP server and database connection');
+
+      try {
+        // Close HTTP server
+        await new Promise((resolve) => {
+          server.close(() => {
+            console.log('HTTP server closed');
+            resolve(true);
+          });
+        });
+
+        // Close database connection
+        await dbConnection.close();
+        console.log('Database connection closed');
+
+        process.exit(0);
+      } catch (error) {
+        console.error('Error during shutdown:', error);
+        process.exit(1);
+      }
+    };
+
+    // Handle Ctrl+C
+    process.on('SIGINT', gracefulShutdown);
+
+    // Handle docker container stops, deployment shutdowns, etc.
+    process.on('SIGTERM', gracefulShutdown);
   } catch (error) {
     logger.error('Failed to start server', {
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -119,6 +148,8 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 
+
 startServer();
+
 
 export { broadcastVoteUpdate };
