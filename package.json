@@ -11,6 +11,7 @@
     "start": "NODE_ENV=production ts-node app/src/index.ts"
   },
   "dependencies": {
+    "@2toad/profanity": "^3.0.1",
     "@google-cloud/secret-manager": "^5.6.0",
     "@types/cookie-parser": "^1.4.7",
     "@types/geoip-lite": "^1.4.4",

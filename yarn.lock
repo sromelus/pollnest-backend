@@ -2,6 +2,11 @@
 # yarn lockfile v1
 
 
+"@2toad/profanity@^3.0.1":
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/@2toad/profanity/-/profanity-3.0.1.tgz#a91a30ec6362ac86e3b0a46e1fa876a3f74aafea"
+  integrity sha512-WqAljnXnxsdUmwJT2VDTHZ6IAMgktnobLtBSdGFQYFLB1kh7q+QqzpxY4rRAWU4lSYvGUykJ+xv5wJ3IZYBuzQ==
+
 "@colors/colors@1.6.0", "@colors/colors@^1.6.0":
   version "1.6.0"
   resolved "https://registry.yarnpkg.com/@colors/colors/-/colors-1.6.0.tgz#ec6cd237440700bc23ca23087f513c75508958b0"

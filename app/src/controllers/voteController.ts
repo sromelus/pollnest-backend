@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import { profanity } from '@2toad/profanity';
 import Vote from '../models/Vote';
-import VoteTally, { Candidate } from '../models/VoteTally';
+import VoteTally from '../models/VoteTally';
 import { broadcastVoteUpdate } from '../index';
 
 interface Votes {
@@ -9,6 +10,7 @@ interface Votes {
   voterGender: string;
   candidate: string;
   voterId: string;
+  chatMessage?: string;
 };
 
 interface ClientInfo {
@@ -51,7 +53,7 @@ export const castVote = async (req: Request, res: Response) => {
         let sessionId = req.cookies?.sessionId;
         const clientInfo = getClientInfo(req);
 
-        const { candidate, voterEthnicity, voterGender } = req.body as Votes;
+        const { candidate, voterEthnicity, voterGender, chatMessage } = req.body as Votes;
 
         if (!sessionId) {
             sessionId = uuidv4();
@@ -109,7 +111,8 @@ export const castVote = async (req: Request, res: Response) => {
         res.status(200).send({ success: true, voteTally: tallyObject });
 
         // Broadcast updated tally to all WebSocket clients
-        broadcastVoteUpdate({ success: true, voteTally: tallyObject });
+        const cleanedMessage = profanity.censor(chatMessage as string);
+        broadcastVoteUpdate({ success: true, voteTally: tallyObject, chatMessage: cleanedMessage });
     } catch (error) {
         console.error('Error casting vote:', error);
         res.status(500).send({ success: false, message: 'Internal server error' });
