@@ -20,7 +20,7 @@ interface ClientInfo {
   country?: string;
 }
 
-const chatMessages: string[] = [];
+const chatMessages: string[] = ['The choice is clear, vote for the candidate that will make America great again!'];
 
 const handleChatMessage = (message: string, arr = chatMessages) => {
     message = message.trim();

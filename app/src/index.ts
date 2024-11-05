@@ -26,7 +26,10 @@ logger.info('Initializing server', {
 const config = envConfig[ENV as Environment] || envConfig.development;
 
 const server = new Server(app);
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({
+  server,
+  path: '/api/votes'
+});
 
 const broadcastVoteUpdate = (data: any) => {
   wss.clients.forEach(client => {
