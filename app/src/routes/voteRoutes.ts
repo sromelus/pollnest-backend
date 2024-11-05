@@ -1,17 +1,19 @@
 import { RequestHandler, Router } from 'express';
-import { getVotes, castVote, postMessage } from '../controllers/voteController';
+import { getVotes, castVote, postMessage, getChatMessages } from '../controllers/voteController';
 import rateLimit from 'express-rate-limit';
 import { validateVote, validateMessage } from '../../middlewares';
 const router = Router();
 
 const getVotesLimiter = rateLimit({
-    windowMs: 60 * 1000,
+    windowMs: 2 * 60 * 1000,
     max: 500,
+    message: { error: 'You have exceeded the maximum number of requests. Please try again in 2 minutes.' },
 });
 
 const voteLimiter = rateLimit({
     windowMs: 24 * 60 * 60 * 1000,
     max: 3,
+    message: { error: 'You have exceeded the maximum number of votes. Please try again tomorrow.' },
 });
 
 const messageLimiter = rateLimit({
@@ -22,6 +24,7 @@ const messageLimiter = rateLimit({
 
 router.get('/', getVotesLimiter, getVotes);
 router.post('/', voteLimiter, validateVote, castVote as RequestHandler);
+router.get('/chat', getVotesLimiter, getChatMessages);
 router.post('/chat', messageLimiter, validateMessage, postMessage as RequestHandler);
 
 export default router;

@@ -3,7 +3,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { profanity } from '@2toad/profanity';
 import Vote from '../models/Vote';
 import VoteTally from '../models/VoteTally';
-import { broadcastVoteUpdate } from '../index';
 
 interface Votes {
   voterEthnicity: string;
@@ -20,7 +19,7 @@ interface ClientInfo {
   country?: string;
 }
 
-const chatMessages: string[] = ['The choice is clear, vote for the candidate that will make America great again!'];
+let chatMessages: string[] = ['The choice is clear, vote for the candidate that will make America great again!'];
 
 const handleChatMessage = (message: string, arr = chatMessages) => {
     message = message.trim();
@@ -29,13 +28,26 @@ const handleChatMessage = (message: string, arr = chatMessages) => {
         return;
     }
 
-    if (chatMessages.length > 10) {
-        chatMessages.shift();
+    if (chatMessages.length > 50) {
+       chatMessages = chatMessages.slice(35);
     }
+
+    // remove any profanity from the message
     const cleanedMessage = profanity.censor(message);
+
+    // add the cleaned message to the chatMessages array
     chatMessages.push(cleanedMessage);
 
-    return arr;
+    // add a 'updated' value to the array to indicate that the chat messages have been updated
+    chatMessages.push('updated');
+
+    // remove the 'updated' value from the array after 5 seconds, to let the client know that the chat messages have been updated
+    // this is to prevent the client from making unnecessary requests to the server
+    setTimeout(() => {
+        chatMessages = chatMessages.filter(msg => msg !== 'updated');
+    }, 8000);
+
+    return chatMessages;
 }
 
 
@@ -46,6 +58,10 @@ const getClientInfo = (req: Request): ClientInfo => {
         region: req.headers['x-appengine-region'] as string,
         country: req.headers['x-appengine-country'] as string,
     };
+};
+
+export const getChatMessages = async (req: Request, res: Response) => {
+    res.send({ chatMessages });
 };
 
 export const getVotes = async (req: Request, res: Response) => {
@@ -130,9 +146,6 @@ export const castVote = async (req: Request, res: Response) => {
         const chatMessages = handleChatMessage(chatMessage as string);
 
         res.status(200).send({ success: true, voteTally: tallyObject, chatMessages });
-
-        // Broadcast updated tally to all WebSocket clients
-        broadcastVoteUpdate({ success: true, voteTally: tallyObject, chatMessages });
     } catch (error) {
         console.error('Error casting vote:', error);
         res.status(500).send({ success: false, message: 'Internal server error' });
@@ -142,8 +155,7 @@ export const castVote = async (req: Request, res: Response) => {
 export const postMessage = async (req: Request, res: Response) => {
     const { chatMessage } = req.body;
 
-    const chatMessages = handleChatMessage(chatMessage as string);
+    handleChatMessage(chatMessage as string);
 
     res.status(200).send({ success: true });
-    broadcastVoteUpdate({ success: true, chatMessages });
 };
