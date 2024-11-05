@@ -143,7 +143,7 @@ export const castVote = async (req: Request, res: Response) => {
             sameSite: 'none',
         });
 
-        const chatMessages = handleChatMessage(chatMessage as string);
+        const chatMessages = handleChatMessage(`${chatMessage} - Showed UP!!`);
 
         res.status(200).send({ success: true, voteTally: tallyObject, chatMessages });
     } catch (error) {
