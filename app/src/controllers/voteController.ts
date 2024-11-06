@@ -21,7 +21,7 @@ interface ClientInfo {
 
 let chatMessages: string[] = ['The choice is clear, vote for the candidate that will make America great again!'];
 
-const handleChatMessage = (message: string, arr = chatMessages) => {
+const handleChatMessage = (message: string, voterRegion: string, voterCity: string) => {
     message = message.trim();
 
     if (!message) {
@@ -36,7 +36,7 @@ const handleChatMessage = (message: string, arr = chatMessages) => {
     const cleanedMessage = profanity.censor(message);
 
     // add the cleaned message to the chatMessages array
-    chatMessages.push(cleanedMessage);
+    chatMessages.push(`${cleanedMessage} in ${voterCity}, ${voterRegion} - Showed UP!!`);
 
     // add a 'updated' value to the array to indicate that the chat messages have been updated
     chatMessages.push('updated');
@@ -143,7 +143,7 @@ export const castVote = async (req: Request, res: Response) => {
             sameSite: 'none',
         });
 
-        const chatMessages = handleChatMessage(`${chatMessage} - Showed UP!!`);
+        const chatMessages = handleChatMessage(chatMessage as string, voterRegion as string, voterCity as string);
 
         res.status(200).send({ success: true, voteTally: tallyObject, chatMessages });
     } catch (error) {
@@ -155,7 +155,12 @@ export const castVote = async (req: Request, res: Response) => {
 export const postMessage = async (req: Request, res: Response) => {
     const { chatMessage } = req.body;
 
-    handleChatMessage(chatMessage as string);
+    const clientInfo = getClientInfo(req);
+
+    const voterRegion = clientInfo.region?.toUpperCase();
+    const voterCity = clientInfo.city?.toUpperCase();
+
+    handleChatMessage(chatMessage as string, voterRegion as string, voterCity as string);
 
     res.status(200).send({ success: true });
 };
