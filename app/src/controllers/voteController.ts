@@ -32,14 +32,9 @@ const handleChatMessage = (message: string, voterRegion: string, voterCity: stri
        chatMessages = chatMessages.slice(35);
     }
 
-    // remove any profanity from the message
     const cleanedMessage = profanity.censor(message);
 
-    // add the cleaned message to the chatMessages array
-    chatMessages.push(`${cleanedMessage} in ${voterCity}, ${voterRegion} - Showed UP!!`);
-
-    // add a 'updated' value to the array to indicate that the chat messages have been updated
-    chatMessages.push('updated');
+    chatMessages.push(cleanedMessage);
 
     // remove the 'updated' value from the array after 5 seconds, to let the client know that the chat messages have been updated
     // this is to prevent the client from making unnecessary requests to the server
