@@ -4,10 +4,10 @@ import cookieParser from 'cookie-parser';
 import voteRoutes from './routes/voteRoutes';
 import healthRoutes from './routes/healthRoutes';
 import './loadEnvironment';
-import dbConnection from '../db/conn';
-import { envConfig, Environment } from '../config/environment';
-import { createLogger, requestLogger } from '../config/logger';
-import { maintenanceMiddleware } from '../middlewares/maintenanceMiddleware';
+import dbConnection from './db/conn';
+import { envConfig, Environment } from './config/environment';
+import { createLogger, requestLogger } from './config/logger';
+import { maintenanceMiddleware } from './middlewares/maintenanceMiddleware';
 
 const app = express();
 const PORT = process.env.PORT || 8080;

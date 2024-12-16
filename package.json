@@ -6,9 +6,9 @@
   "scripts": {
     "build": "tsc",
     "deploy": "yarn build && google-cloud-sdk/bin/gcloud app deploy",
-    "start:dev": "NODE_ENV=development nodemon app/src/index.ts",
-    "start:staging": "NODE_ENV=staging ts-node app/src/index.ts",
-    "start": "NODE_ENV=production ts-node app/src/index.ts",
+    "start:dev": "NODE_ENV=development nodemon src/app.ts",
+    "start:staging": "NODE_ENV=staging ts-node src/app.ts",
+    "start": "NODE_ENV=production ts-node src/app.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
@@ -18,6 +18,7 @@
     "@google-cloud/secret-manager": "^5.6.0",
     "@types/cookie-parser": "^1.4.7",
     "@types/geoip-lite": "^1.4.4",
+    "@types/jest": "^29.5.14",
     "@types/morgan": "^1.9.9",
     "@types/ws": "^8.5.13",
     "axios": "^1.7.7",
@@ -32,6 +33,7 @@
     "mongoose": "^8.7.3",
     "morgan": "^1.10.0",
     "supertest": "^7.0.0",
+    "ts-jest": "^29.2.5",
     "uuid": "^11.0.2",
     "winston": "^3.15.0",
     "ws": "^8.18.0"
