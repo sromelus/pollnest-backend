@@ -62,7 +62,7 @@ const PollSchema: Schema = new Schema({
             type: [{
                 id: String,
                 image: String,
-                voteButtonText: String,
+                voteOptionText: String,
                 count: {type: Number, default: 0}
             }],
             validate: {
@@ -70,7 +70,8 @@ const PollSchema: Schema = new Schema({
                     return voteOptions.length >= 2
                 },
                 message: 'You should provide at least 2 vote options'
-            }
+            },
+            required: true
         },
         startDate: {
             type: Date,

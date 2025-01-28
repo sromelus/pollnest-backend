@@ -1,8 +1,9 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { Candidate } from './VoteTally';
+import Poll from '../../src/models/Poll';
 
 export interface Vote extends Document {
-  candidate: Candidate;
+  pollId: string,
+  voteOptionText: string;
   voterId: string;
   voterEthnicity: string;
   voterGender: string;
@@ -10,44 +11,54 @@ export interface Vote extends Document {
 }
 
 const VoteSchema: Schema = new Schema({
-  candidate: {
-    type: String,
-    required: true,
-    enum: Object.values(Candidate)
+    pollId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true
+    },
+    voteOptionText: {
+      type: String,
+      required: true,
+      validate: {
+        validator: async function(this: any, voteOptionText: string) {
+          const poll = await Poll.findById(this.pollId);
+          if(!poll) return false;
+          return (poll.voteOptions as Array<{ voteOptionText: string }>).some((option) => option.voteOptionText === voteOptionText);
+        },
+        message: 'Vote option must be one of the valid options from the poll.'
+      }
+    },
+    voterId: {
+      type: String,
+      required: true,
+    },
+    voterIp: {
+      type: String,
+      required: true
+    },
+    voterCountry: {
+      type: String,
+      required: true
+    },
+    voterRegion: {
+      type: String,
+      required: false
+    },
+    voterCity: {
+      type: String,
+      required: false
+    },
+    voterEthnicity: {
+      type: String,
+      required: true
+    },
+    voterGender: {
+      type: String,
+      required: true
+    }
   },
-  voterId: {
-    type: String,
-    required: true,
-    unique: true
-  },
-  voterIp: {
-    type: String,
-    required: true
-  },
-  voterCountry: {
-    type: String,
-    required: true
-  },
-  voterRegion: {
-    type: String,
-    required: false
-  },
-  voterCity: {
-    type: String,
-    required: false
-  },
-  voterEthnicity: {
-    type: String,
-    required: true
-  },
-  voterGender: {
-    type: String,
-    required: true
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
+  {
+      timestamps: true
   }
-});
+);
 
 export default mongoose.model<Vote>('Vote', VoteSchema);

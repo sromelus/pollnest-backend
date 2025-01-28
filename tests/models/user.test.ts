@@ -19,7 +19,7 @@ afterAll(async () => {
 
 describe('User Model', () => {
     //Happy Path
-    it('should create a new user', async () => {
+    it('should create a new user successfully', async () => {
         const admin = new User({
             firstName: 'Jane',
             lastName: 'Doe',
@@ -50,7 +50,7 @@ describe('User Model', () => {
         expect(savedAdmin.role).toEqual('user');
     })
 
-
+     //Sad Path
     it('should not create user with bad email', async () => {
         const userWithBadEmail = new User({
             firstName: 'Jane',

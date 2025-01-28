@@ -19,8 +19,8 @@ afterAll(async () => {
 
 describe('Poll Model', () => {
     //Happy Path
-    it('should create a new poll', async () => {
-        const paramsVoteOptions = [{img: 'trump_img', voteButtonText: 'Trump', count: 0}, {img: 'kamala_img', voteButtonText: 'Kamala', count: 0}]
+    it('should create a new poll successfully', async () => {
+        const paramsVoteOptions = [{img: 'trump_img', voteOptionText: 'Trump', count: 0}, {img: 'kamala_img', voteOptionText: 'Kamala', count: 0}]
 
         const admin = new User({
             firstName: 'Jane',
@@ -70,8 +70,7 @@ describe('Poll Model', () => {
     })
 
     //Sad Path
-    it('should not create a new poll', async () => {
-        const paramsVoteOptions = [{img: 'trump_img', voteButtonText: 'Trump', count: 0}, {img: 'kamala_img', voteButtonText: 'Kamala', count: 0}]
+    it('should not create a new poll with missing attributes', async () => {
         const admin = new User({
             firstName: 'Jane',
             lastName: 'Doe',
@@ -101,7 +100,6 @@ describe('Poll Model', () => {
 
         const poll = new Poll({
            messages: [{userId: savedUser._id, content: 'hello world'}],
-           voteOptions: paramsVoteOptions,
         });
 
         try {
@@ -109,15 +107,10 @@ describe('Poll Model', () => {
             fail('Should not succeed in saving invalid poll');
         } catch(error) {
             expect(error).toBeInstanceOf(mongoose.Error.ValidationError);
-            console.log(error)
             expect((error as any).errors.title.message).toBe('Path `title` is required.')
-
+            expect((error as any).errors.description.message).toBe('Path `description` is required.')
+            expect((error as any).errors.userId.message).toBe('Path `userId` is required.')
+            expect((error as any).errors.voteOptions.message).toBe('You should provide at least 2 vote options')
         }
-
-        // expect(savedPoll._id).toBeDefined();
-        // expect(savedPoll.title).toEqual('2024 elections');
-        // expect(savedPoll.description).toEqual('Who do you think is going to win this election?');
-        // expect((savedPoll.messages).map(msg => msg.content)).toEqual(['hello world']);
-        // expect(savedPoll.voteOptions.length).toEqual(2);
     })
 })
