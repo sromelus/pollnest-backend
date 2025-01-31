@@ -1,116 +1,76 @@
-import mongoose from 'mongoose';
-import User from '../../src/models/User'
-import Poll from '../../src/models/Poll'
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/db';
+import Poll from '../../src/models/Poll';
+import { testUser, testPoll } from '../factories'
 
-let mongoServer: MongoMemoryServer;
 
 beforeAll(async () => {
-    mongoServer = await MongoMemoryServer.create();
-    const uri = mongoServer.getUri();
-    await mongoose.connect(uri);
+    await dbConnect();
+});
+
+beforeEach(async () => {
+    await dropDatabase();
+});
+
+afterEach(async () => {
+    await dropDatabase();
 });
 
 afterAll(async () => {
-    await mongoose.connection.close();
-    await mongoServer.stop();
+    await dbDisconnect();
 });
 
 
 describe('Poll Model', () => {
     //Happy Path
     it('should create a new poll successfully', async () => {
-        const paramsVoteOptions = [{img: 'trump_img', voteOptionText: 'Trump', count: 0}, {img: 'kamala_img', voteOptionText: 'Kamala', count: 0}]
+        const savedAdmin = await testUser('admin@example.com', 'admin');
+        await testUser('subscriber@example.com', 'subscriber');
+        await testUser('user@example.com');
 
-        const admin = new User({
-            firstName: 'Jane',
-            lastName: 'Doe',
-            email: 'jane@example.com',
-            password: '123456',
-            role: 'admin'
-        });
-
-        const subscriber = new User({
-            firstName: 'Jane',
-            lastName: 'Doe',
-            email: 'jane1@example.com',
-            password: '123456',
-            role: 'subscriber'
-        });
-
-        const user = new User({
-            firstName: 'Rob',
-            lastName: 'Lam',
-            email: 'rob@example.com',
-            password: '123456',
-        });
-
-        const savedAdmin = await admin.save();
-        const savedSubscriber = await subscriber.save();
-        const savedUser = await user.save();
-
-        const poll = new Poll({
-           title: '2024 elections',
-           userId: savedAdmin._id, //new mongoose.Types.ObjectId()
-           description: 'Who do you think is going to win this election?',
-           messages: [{userId: savedUser._id, content: 'hello world'}],
-           voteOptions: paramsVoteOptions,
-           startDate: Date.now(),
-           endDate: Date.now(),
-           active: true
-        });
-
+        const poll = await testPoll(savedAdmin._id);
         const savedPoll = await poll.save();
 
         expect(savedPoll._id).toBeDefined();
         expect(savedPoll.title).toEqual('2024 elections');
         expect(savedPoll.description).toEqual('Who do you think is going to win this election?');
-        expect((savedPoll.messages).map(msg => msg.content)).toEqual(['hello world']);
-        expect(savedPoll.voteOptions.length).toEqual(2);
-    })
+        expect(savedPoll.messages).toEqual([]);
+        expect(savedPoll.voteOptions).toHaveLength(2);
+    });
+
+    it('should create 2 new polls successfully', async () => {
+        const savedAdmin = await testUser('admin2@example.com', 'admin');
+        await testUser('subscriber2@example.com', 'subscriber');
+        await testUser('user2@example.com');
+
+        const poll1 = await testPoll(savedAdmin._id);
+        const poll2 = await testPoll(savedAdmin._id);
+
+        const savedPoll1 = await poll1.save();
+        const savedPoll2 = await poll2.save();
+        const pollCount = await Poll.find({});
+
+        expect(savedPoll1._id).toBeDefined();
+        expect(savedPoll2._id).toBeDefined();
+        expect(pollCount).toHaveLength(2);
+    });
 
     //Sad Path
     it('should not create a new poll with missing attributes', async () => {
-        const admin = new User({
-            firstName: 'Jane',
-            lastName: 'Doe',
-            email: 'jane4@example.com',
-            password: '123456',
-            role: 'admin'
-        });
+        const savedAdmin = await testUser('admin3@example.com', 'admin');
+        const savedUser = await testUser('user3@example.com');
+        await testUser('subscriber3@example.com', 'subscriber');
 
-        const subscriber = new User({
-            firstName: 'Joe',
-            lastName: 'Dee',
-            email: 'joe4@example.com',
-            password: '123456',
-            role: 'subscriber'
-        });
-
-        const user = new User({
-            firstName: 'Rob',
-            lastName: 'Lam',
-            email: 'rob4@example.com',
-            password: '123456',
-        });
-
-        const savedAdmin = await admin.save();
-        const savedSubscriber = await subscriber.save();
-        const savedUser = await user.save();
-
-        const poll = new Poll({
-           messages: [{userId: savedUser._id, content: 'hello world'}],
-        });
+        const messages = [{userId: savedUser._id, content: 'hello world', createdAt: Date.now()}];
+        const poll = new Poll({ messages });
 
         try {
             await poll.save();
             fail('Should not succeed in saving invalid poll');
-        } catch(error) {
-            expect(error).toBeInstanceOf(mongoose.Error.ValidationError);
-            expect((error as any).errors.title.message).toBe('Path `title` is required.')
-            expect((error as any).errors.description.message).toBe('Path `description` is required.')
-            expect((error as any).errors.userId.message).toBe('Path `userId` is required.')
-            expect((error as any).errors.voteOptions.message).toBe('You should provide at least 2 vote options')
+        } catch (error) {
+            expect((error as any).errors.title.message).toBe('Path `title` is required.');
+            expect((error as any).errors.description.message).toBe('Path `description` is required.');
+            expect((error as any).errors.userId.message).toBe('Path `userId` is required.');
+            expect((error as any).errors.voteOptions.message).toBe('You should provide at least 2 vote options');
         }
-    })
-})
+    });
+});

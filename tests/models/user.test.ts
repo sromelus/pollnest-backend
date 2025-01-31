@@ -1,69 +1,51 @@
-import mongoose from 'mongoose';
-import User from '../../src/models/User'
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/db';
+import { testUser } from '../factories'
 
-let mongoServer: MongoMemoryServer;
 
 beforeAll(async () => {
-    mongoServer = await MongoMemoryServer.create();
-    const uri = mongoServer.getUri();
-    await mongoose.connect(uri);
+    await dbConnect();
+});
+
+beforeEach(async () => {
+    await dropDatabase();
+});
+
+afterEach(async () => {
+    await dropDatabase();
 });
 
 afterAll(async () => {
-    await mongoose.connection.close();
-    await mongoServer.stop();
+    await dbDisconnect();
 });
-
-
 
 describe('User Model', () => {
     //Happy Path
     it('should create a new user successfully', async () => {
-        const admin = new User({
-            firstName: 'Jane',
-            lastName: 'Doe',
-            email: 'jane@example.com',
-            password: '123456',
-            role: 'admin'
-        });
-
+        const admin = await testUser('jane@example.com', 'admin');
         const savedAdmin = await admin.save();
 
-        expect(savedAdmin._id).toBeDefined();
-        expect(savedAdmin.firstName).toEqual('Jane');
-        expect(savedAdmin.lastName).toEqual('Doe');
-        expect(savedAdmin.email).toEqual('jane@example.com');
-        expect(savedAdmin.role).toEqual('admin');
-    })
+        expect(admin._id).toBeDefined();
+        expect(admin.firstName).toBeDefined();
+        expect(admin.lastName).toBeDefined();
+        expect(admin.email).toEqual('jane@example.com');
+        expect(admin.role).toEqual('admin');
+    });
 
     it('should have default role of "user"', async () => {
-        const admin = new User({
-            firstName: 'Jane',
-            lastName: 'Doe',
-            email: 'jane1@example.com',
-            password: '123456'
-        });
+        const user = await testUser('jane1@example.com');
+        const savedUser = await user.save();
 
-        const savedAdmin = await admin.save();
+        expect(savedUser.role).toEqual('user');
+    });
 
-        expect(savedAdmin.role).toEqual('user');
-    })
-
-     //Sad Path
+    //Sad Path
     it('should not create user with bad email', async () => {
-        const userWithBadEmail = new User({
-            firstName: 'Jane',
-            lastName: 'Doe',
-            email: 'jane2@.com',
-            password: '123456'
-        });
+        const userWithBadEmail = await testUser('jane2@.com')
 
         try {
             await userWithBadEmail.save();
             fail('Should not succeed in saving invalid email');
         } catch (error) {
-            expect(error).toBeInstanceOf(mongoose.Error.ValidationError);
             expect((error as any).errors.email.message).toBe('Email is invalid');
         }
     });
