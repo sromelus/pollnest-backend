@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import voteRoutes from './routes/voteRoutes';
+import routes from './routes';
 import healthRoutes from './routes/healthRoutes';
 import './loadEnvironment';
 import dbConnection from './db/conn';
@@ -60,7 +60,7 @@ const startServer = async () => {
 
     app.use('/health', healthRoutes);
 
-    app.use('/api/votes', voteRoutes);
+    app.use('/api/v1', routes);
 
     app.listen(PORT, () => {
       logger.info('Server started successfully', {

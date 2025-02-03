@@ -1,7 +1,7 @@
 import express from 'express';
 import request from 'supertest';
 import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/dbTestConfig';
-import userRoutes from '../../src/routes';
+import routes from '../../src/routes';
 import { User } from '../../src/models';
 
 beforeAll(async () => {
@@ -19,7 +19,7 @@ afterAll(async () => {
 
 const app = express();
 app.use(express.json());
-app.use('/api/v1', userRoutes);
+app.use('/api/v1', routes);
 
 describe('User Management', () => {
     let authToken: string;
