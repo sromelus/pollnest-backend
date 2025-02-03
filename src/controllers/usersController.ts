@@ -1,15 +1,15 @@
 import { RequestHandler } from 'express';
 import { User } from '../models'
-import { splitFullName } from '../utils/formatName';
+import { splitFullName } from '../utils';
 
 
-export class UsersController {
+export default class UsersController {
     static getUsers: RequestHandler = async (req, res) => {
         try {
             const users = await User.find();
             res.status(200).send({ users });
         } catch (error: any) {
-            res.status(400).send({ msg: 'User creation failed', error: error.message })
+            res.status(400).send({ message: 'User creation failed', error: error.message })
         }
     }
 
@@ -18,7 +18,7 @@ export class UsersController {
         const user = await User.findById(id);
 
         if (!user) {
-            res.status(404).send({ msg: 'User not found' });
+            res.status(404).send({ message: 'User not found' });
             return;
         }
 
@@ -39,7 +39,7 @@ export class UsersController {
 
             res.status(200).send({ user: { id: user.id, name: user.firstName + ' ' + user.lastName, email: user.email } });
         } catch (error: any) {
-            res.status(400).send({ msg: 'User creation failed', error: error.message })
+            res.status(400).send({ message: 'User creation failed', error: error.message })
         }
     }
 
@@ -51,7 +51,7 @@ export class UsersController {
             const user = await User.findById(id);
 
             if (!user) {
-                res.status(404).send({ msg: 'User not found' });
+                res.status(404).send({ message: 'User not found' });
                 return;
             }
 
@@ -77,7 +77,7 @@ export class UsersController {
                 }
             });
         } catch (error: any) {
-            res.status(400).send({ msg: 'User update failed', error: error.message })
+            res.status(400).send({ message: 'User update failed', error: error.message })
         }
     }
 
@@ -88,16 +88,14 @@ export class UsersController {
             const user = await User.findById(id);
 
             if (!user) {
-                res.status(404).send({ msg: 'User not found' });
+                res.status(404).send({ message: 'User not found' });
                 return;
             }
 
             await user.deleteOne();
-            res.status(200).send({ msg: 'User deleted successfully' });
+            res.status(200).send({ message: 'User deleted successfully' });
         } catch (error: any) {
-            res.status(400).send({ msg: 'User deletion failed', error: error.message })
+            res.status(400).send({ message: 'User deletion failed', error: error.message })
         }
     }
 }
-
-export default UsersController;

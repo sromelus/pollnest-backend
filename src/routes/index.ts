@@ -1,9 +1,15 @@
 import { Router } from 'express';
 import registrationRoutes from './registrationRoutes';
 import userRoutes from './userRoutes';
+import authRoutes from './authRoutes';
+
 const router = Router();
 
 const defaultRoutes = [
+    {
+        path: '/auth',
+        route: authRoutes
+    },
     {
         path: '/registration',
         route: registrationRoutes

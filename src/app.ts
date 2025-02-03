@@ -3,9 +3,9 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import routes from './routes';
 import healthRoutes from './routes/healthRoutes';
-import './loadEnvironment';
+import './loadEnvironmentVariables';
 import dbConnection from './db/conn';
-import { envConfig, Environment } from './config/environment';
+import { envConfig } from './config/environment';
 import { createLogger, requestLogger } from './config/logger';
 import { maintenanceMiddleware } from './middlewares/maintenanceMiddleware';
 
@@ -21,7 +21,7 @@ logger.info('Initializing server', {
   nodeVersion: process.version
 });
 
-const config = envConfig[ENV as Environment] || envConfig.development;
+const config = envConfig[ENV] || envConfig.development;
 
 const startServer = async () => {
   try {

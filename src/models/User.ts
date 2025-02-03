@@ -13,6 +13,7 @@ export interface User extends Document {
     email: string;
     password: string;
     role: 'admin' | 'subscriber' | 'user'
+    comparePassword(password: string): Promise<boolean>;
 }
 
 const UserSchema: Schema = new Schema({
@@ -80,8 +81,8 @@ UserSchema.pre('save', async function(next) {
 });
 
 // Add method to compare passwords
-UserSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
-    return bcrypt.compare(candidatePassword, this.password as string);
+UserSchema.methods.comparePassword = async function(password: string): Promise<boolean> {
+    return bcrypt.compare(password, this.password as string);
 };
 
 export default mongoose.model<User>('User', UserSchema);

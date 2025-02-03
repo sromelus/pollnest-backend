@@ -130,24 +130,55 @@ describe('User Registration', () => {
     });
   });
 
-  // describe('Delete User', () => {
-  //   it('should delete user successfully', async () => {
+  describe('Update User', () => {
+    beforeEach(async () => {
+      await User.create({
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john@example.com',
+        password: 'ValidPass123!'
+      });
+    });
 
-  //     const res = await request(app).delete('/api/v1/registration/delete').send({
-  //       email: 'john@example.com',
-  //       password: 'ValidPass123!'
-  //     });
+    it('should update user successfully', async () => {
+      const loginRes = await request(app).post('/api/v1/auth/login').send({
+        email: 'john@example.com',
+        password: 'ValidPass123!'
+      });
 
-  //     expect(res.status).toBe(200);
-  //   });
-  // });
+      const token = loginRes.body.token;
 
-  // describe('Update User', () => {
-  //   it('should update user successfully', async () => {
-  //     const res = await request(app).post('/api/v1/registration/update').send({
-  //       email: 'john@example.com',
-  //       password: 'ValidPass123!'
-  //     });
-  //   });
-  // });
+      const res = await request(app).post('/api/v1/registration/update').set('Authorization', `Bearer ${token}`).send({
+        name: 'John Doe Updated'
+      });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('message', 'User updated successfully');
+    });
+  });
+
+  describe('Delete User', () => {
+    beforeEach(async () => {
+      await User.create({
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john@example.com',
+        password: 'ValidPass123!'
+      });
+    });
+
+    it('should delete user successfully', async () => {
+      const loginRes = await request(app).post('/api/v1/auth/login').send({
+        email: 'john@example.com',
+        password: 'ValidPass123!'
+      });
+
+      const token = loginRes.body.token;
+
+      const res = await request(app).delete('/api/v1/registration/delete').set('Authorization', `Bearer ${token}`)
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('message', 'User deleted successfully');
+    });
+  });
 });

@@ -1,6 +1,6 @@
 import { User } from '../../src/models'
 
-export const testUser = async (email: string, role: string = 'user') => {
+export const testUser = async (email: string = 'test@example.com', role: string = 'user') => {
     const user = new User({
         firstName: 'Test',
         lastName: 'User',

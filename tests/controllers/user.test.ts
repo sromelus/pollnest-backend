@@ -120,7 +120,6 @@ describe('User Management', () => {
                 .delete(`/api/v1/users/${fakeId}`)
                 // .set('Authorization', `Bearer ${authToken}`);
 
-            console.log(res.body);
             expect(res.status).toBe(404);
         });
     });
