@@ -1,4 +1,4 @@
-import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/db';
+import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/dbTestConfig';
 import { testUser } from '../factories'
 
 
@@ -7,10 +7,6 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-    await dropDatabase();
-});
-
-afterEach(async () => {
     await dropDatabase();
 });
 
@@ -46,7 +42,7 @@ describe('User Model', () => {
             await userWithBadEmail.save();
             fail('Should not succeed in saving invalid email');
         } catch (error) {
-            expect((error as any).errors.email.message).toBe('Email is invalid');
+            expect((error as any).errors.email.message).toBe('Please enter a valid email address');
         }
     });
 });

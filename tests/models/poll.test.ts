@@ -1,5 +1,5 @@
-import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/db';
-import Poll from '../../src/models/Poll';
+import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/dbTestConfig';
+import { Poll } from '../../src/models';
 import { testUser, testPoll } from '../factories'
 
 
@@ -8,10 +8,6 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-    await dropDatabase();
-});
-
-afterEach(async () => {
     await dropDatabase();
 });
 

@@ -1,4 +1,4 @@
-import Vote from '../../src/models/Vote'
+import { Vote } from '../../src/models'
 
 export const testVote = (pollId: any, voterId: any, voteOptionText: string) => {
     const vote = new Vote({

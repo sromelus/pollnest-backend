@@ -1,4 +1,4 @@
-import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/db';
+import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/dbTestConfig';
 import { testUser, testPoll, testVote } from '../factories';
 
 beforeAll(async () => {
@@ -6,10 +6,6 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-    await dropDatabase();
-});
-
-afterEach(async () => {
     await dropDatabase();
 });
 

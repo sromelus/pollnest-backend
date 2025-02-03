@@ -1,4 +1,4 @@
-import Poll from '../../src/models/Poll';
+import { Poll } from '../../src/models'
 
 export const testPoll = async (userId: any) => {
     const poll = new Poll({
