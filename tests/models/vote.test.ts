@@ -16,9 +16,9 @@ afterAll(async () => {
 describe('Vote Model', () => {
     //Happy Path
     it('should create new vote successfully', async () => {
-        const subscriber = await testUser('jane@example.com', 'subscriber');
-        const savedSubscriber = await subscriber.save();
-        const poll = await testPoll(savedSubscriber._id);
+        const subscriber = testUser({email: 'jane@example.com', role: 'subscriber'});
+        await subscriber.save();
+        const poll = testPoll(subscriber.id);
         const savedPoll = await poll.save();
 
         const vote = testVote(savedPoll.id, subscriber._id, 'trump')
@@ -28,7 +28,7 @@ describe('Vote Model', () => {
     });
 
     //Sad Path
-    it('should not create a vote when pollId or voteOptionText is missing', async () => {
+    it('should not create a vote when pollId or pollOptionText is missing', async () => {
         const vote = testVote(null, null, '')
 
         try {
@@ -36,24 +36,24 @@ describe('Vote Model', () => {
             fail('Should not succeed in creating vote');
         } catch(error) {
             expect((error as any).errors.pollId.message).toBe('Path `pollId` is required.');
-            expect((error as any).errors.voteOptionText.message).toBe('Path `voteOptionText` is required.');
+            expect((error as any).errors.pollOptionText.message).toBe('Path `pollOptionText` is required.');
         }
     });
 
     // Sad Path
-    it('should not create a vote when voteOptionText is not valid', async () => {
-        const subscriber = await testUser('jane2@example.com', 'subscriber');
-        const poll = await testPoll(subscriber._id);
-        const savedSubscriber = await subscriber.save();
+    it('should not create a vote when pollOptionText is not valid', async () => {
+        const subscriber = testUser({email: 'jane2@example.com', role: 'subscriber'});
+        await subscriber.save();
+        const poll = testPoll(subscriber.id);
         const savedPoll = await poll.save();
 
-        const vote = testVote(savedPoll._id, savedSubscriber._id, 'wrongOption')
+        const vote = testVote(savedPoll.id, subscriber.id, 'wrongOption')
 
         try {
             await vote.save();
             fail('Should not succeed in creating vote');
         } catch(error) {
-            expect((error as any).errors.voteOptionText.message).toBe('Vote option must be one of the valid options from the poll.');
+            expect((error as any).errors.pollOptionText.message).toBe('Vote option must be one of the valid options from the poll.');
         }
     });
 });

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import registrationRoutes from './registrationRoutes';
 import userRoutes from './userRoutes';
 import authRoutes from './authRoutes';
+import pollRoutes from './pollRoutes';
 
 const router = Router();
 
@@ -17,6 +18,10 @@ const defaultRoutes = [
     {
         path: '/users',
         route: userRoutes
+    },
+    {
+        path: '/polls',
+        route: pollRoutes
     }
 ]
 

@@ -19,7 +19,7 @@ afterAll(async () => {
 
 const app = express();
 app.use(express.json());
-app.use('/api/v1', routes)
+app.use('/api/v1', routes);
 
 
 describe('User Registration', () => {

@@ -3,7 +3,6 @@ import express from "express";
 import routes from "../../src/routes";
 import { User } from "../../src/models";
 import { dbConnect, dbDisconnect, dropDatabase } from "../helpers/dbTestConfig";
-import cookieParser from 'cookie-parser';
 import { testUser } from "../factories";
 
 beforeAll(async () => {
@@ -23,7 +22,6 @@ afterAll(async () => {
 const app = express();
 
 app.use(express.json());
-app.use(cookieParser());
 app.use('/api/v1', routes);
 
 describe('Auth Controller', () => {

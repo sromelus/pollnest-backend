@@ -1,12 +1,12 @@
 import { User } from '../../src/models'
 
-export const testUser = async (email: string = 'test@example.com', role: string = 'user') => {
+export const testUser = (options: {email: string, role: string} = {email: 'test@example.com', role: 'user'}) => {
     const user = new User({
         firstName: 'Test',
         lastName: 'User',
-        email,
+        email: options.email,
         password: '12345678Aa!',
-        role
+        role: options.role
     });
 
     return user;

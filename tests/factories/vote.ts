@@ -1,9 +1,9 @@
 import { Vote } from '../../src/models'
 
-export const testVote = (pollId: any, voterId: any, voteOptionText: string) => {
+export const testVote = (pollId: any, voterId: any, pollOptionText: string) => {
     const vote = new Vote({
         pollId,
-        voteOptionText,
+        pollOptionText,
         voterId,
         voterIp: '23',
         voterCountry: 'US',

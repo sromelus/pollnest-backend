@@ -6,9 +6,11 @@ export interface Poll extends Document {
     description: string;
     userId: string;
     messages: {content: string}[];
-    voteOptions: {}[];
+    pollOptions: {}[];
     startDate: string;
     endDate: string;
+    active: boolean;
+    public: boolean;
 }
 
 type MessageType = {
@@ -42,12 +44,20 @@ const PollSchema: Schema = new Schema({
         userId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
+            validate: {
+                validator: async function(userId: string) {
+                    const User = mongoose.model('User');
+                    const user = await User.findById(userId);
+                    return user && (user.role === 'admin' || user.role === 'subscriber');
+                },
+                message: 'Invalid user ID or insufficient permissions. User must be an admin or subscriber.'
+            },
             required: true,
         },
         messages: {
             type: [{
-                userId: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
-                content: {type: String, required: true, maxlength: 500 },
+                userId: {type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
+                content: {type: String, required: true, maxLength: 500 },
                 createdAt: { type: Date, default: Date.now }
             }],
             validate: {
@@ -57,18 +67,18 @@ const PollSchema: Schema = new Schema({
                 message: 'Messages array exceeds the maximum limit of 200.'
             }
         },
-        voteOptions: {
+        pollOptions: {
             type: [{
                 id: String,
                 image: String,
-                voteOptionText: String,
+                pollOptionText: String,
                 count: {type: Number, default: 0}
             }],
             validate: {
-                validator: function(voteOptions: Array<VoteOptionType>) {
-                    return voteOptions.length >= 2
+                validator: function(pollOptions: Array<VoteOptionType>) {
+                    return pollOptions.length >= 2
                 },
-                message: 'You should provide at least 2 vote options'
+                message: 'You should provide at least 2 poll options'
             },
             required: true
         },
@@ -78,12 +88,16 @@ const PollSchema: Schema = new Schema({
         },
         endDate: {
             type: Date,
-            default: Date.now,
+            default: () => new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
             required: true
         },
         active: {
             type: Boolean,
             default: true
+        },
+        public: {
+            type: Boolean,
+            default: false
         }
     },
     {

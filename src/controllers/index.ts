@@ -2,9 +2,11 @@
 import RegistrationController from './registrationsController'
 import UsersController from './usersController'
 import AuthController from './authController'
+import PollController from './pollController'
 
 export {
     RegistrationController,
     UsersController,
-    AuthController
+    AuthController,
+    PollController
 }
