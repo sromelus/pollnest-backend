@@ -17,18 +17,18 @@ afterAll(async () => {
 describe('User Model', () => {
     //Happy Path
     it('should create a new user successfully', async () => {
-        const admin = await testUser('jane@example.com', 'admin');
+        const admin = testUser({firstName: 'Jane', lastName: 'Doe', email: 'jane@example.com', password: '12345678Aa!', role: 'admin'});
         const savedAdmin = await admin.save();
 
-        expect(admin._id).toBeDefined();
-        expect(admin.firstName).toBeDefined();
-        expect(admin.lastName).toBeDefined();
-        expect(admin.email).toEqual('jane@example.com');
-        expect(admin.role).toEqual('admin');
+        expect(savedAdmin._id).toBeDefined();
+        expect(savedAdmin.firstName).toBeDefined();
+        expect(savedAdmin.lastName).toBeDefined();
+        expect(savedAdmin.email).toEqual('jane@example.com');
+        expect(savedAdmin.role).toEqual('admin');
     });
 
     it('should have default role of "user"', async () => {
-        const user = await testUser('jane1@example.com');
+        const user = testUser({firstName: 'Jane', lastName: 'Doe', email: 'jane1@example.com', password: '12345678Aa!', role: 'user'});
         const savedUser = await user.save();
 
         expect(savedUser.role).toEqual('user');
@@ -36,7 +36,7 @@ describe('User Model', () => {
 
     //Sad Path
     it('should not create user with bad email', async () => {
-        const userWithBadEmail = await testUser('jane2@.com')
+        const userWithBadEmail = testUser({firstName: 'Jane', lastName: 'Doe', email: 'jane2@.com', password: '12345678Aa!', role: 'user'});
 
         try {
             await userWithBadEmail.save();

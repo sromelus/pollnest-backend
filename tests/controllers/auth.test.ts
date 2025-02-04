@@ -26,7 +26,7 @@ app.use('/api/v1', routes);
 
 describe('Auth Controller', () => {
     beforeEach(async () => {
-        const user = await testUser("john@example.com");
+        const user = testUser({email: "john@example.com"});
         await user.save();
     });
 

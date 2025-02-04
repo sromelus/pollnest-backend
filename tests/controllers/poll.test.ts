@@ -36,8 +36,8 @@ describe('Poll Controller', () => {
 
     describe('Get Polls', () => {
         it('should get a poll', async () => {
-            const poll1 = testPoll(userId);
-            const poll2 = testPoll(userId);
+            const poll1 = testPoll({ userId });
+            const poll2 = testPoll({ userId });
             await poll1.save();
             await poll2.save();
             const res = await request(app).get(`/api/v1/polls`);
@@ -49,7 +49,7 @@ describe('Poll Controller', () => {
 
     describe('Get Poll', () => {
         it('should get a poll', async () => {
-            const poll = testPoll(userId);
+            const poll = testPoll({ userId });
             await poll.save();
             const res = await request(app).get(`/api/v1/polls/${poll.id}`);
 
@@ -101,7 +101,7 @@ describe('Poll Controller', () => {
         let pollId: string;
 
         beforeEach(async () => {
-            const poll = testPoll(userId);
+            const poll = testPoll({ userId });
             await poll.save();
             pollId = poll.id;
         });
@@ -122,7 +122,7 @@ describe('Poll Controller', () => {
         let pollId: string;
 
         beforeEach(async () => {
-            const poll = testPoll(userId);
+            const poll = testPoll({ userId });
             await poll.save();
             pollId = poll.id;
         });
@@ -140,7 +140,7 @@ describe('Poll Controller', () => {
         let poll: any;
 
         beforeEach(async () => {
-            poll = testPoll(userId);
+            poll = testPoll({ userId });
             await poll.save();
             pollId = poll.id;
         });
@@ -158,7 +158,7 @@ describe('Poll Controller', () => {
         let poll: any;
 
         beforeEach(async () => {
-            poll = testPoll(userId);
+            poll = testPoll({ userId });
             await poll.save();
             pollId = poll.id;
         });

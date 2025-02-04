@@ -16,12 +16,12 @@ afterAll(async () => {
 describe('Vote Model', () => {
     //Happy Path
     it('should create new vote successfully', async () => {
-        const subscriber = testUser({email: 'jane@example.com', role: 'subscriber'});
+        const subscriber = testUser({firstName: 'Jane', lastName: 'Doe', email: 'jane@example.com', password: '12345678Aa!', role: 'subscriber'});
         await subscriber.save();
-        const poll = testPoll(subscriber.id);
+        const poll = testPoll({ userId: subscriber.id });
         const savedPoll = await poll.save();
 
-        const vote = testVote(savedPoll.id, subscriber._id, 'trump')
+        const vote = testVote({pollId: savedPoll.id, voterId: subscriber.id, pollOptionText: 'trump'})
         const savedVote = await vote.save();
 
         expect(savedVote._id).toBeDefined();
@@ -29,7 +29,7 @@ describe('Vote Model', () => {
 
     //Sad Path
     it('should not create a vote when pollId or pollOptionText is missing', async () => {
-        const vote = testVote(null, null, '')
+        const vote = testVote({pollId: null, voterId: null, pollOptionText: ''})
 
         try {
             await vote.save();
@@ -42,12 +42,12 @@ describe('Vote Model', () => {
 
     // Sad Path
     it('should not create a vote when pollOptionText is not valid', async () => {
-        const subscriber = testUser({email: 'jane2@example.com', role: 'subscriber'});
+        const subscriber = testUser({firstName: 'Jane', lastName: 'Doe', email: 'jane2@example.com', password: '12345678Aa!', role: 'subscriber'});
         await subscriber.save();
-        const poll = testPoll(subscriber.id);
+        const poll = testPoll({ userId: subscriber.id });
         const savedPoll = await poll.save();
 
-        const vote = testVote(savedPoll.id, subscriber.id, 'wrongOption')
+        const vote = testVote({pollId: savedPoll.id, voterId: subscriber.id, pollOptionText: 'wrongOption'})
 
         try {
             await vote.save();

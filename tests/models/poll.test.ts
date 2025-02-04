@@ -24,7 +24,7 @@ describe('Poll Model', () => {
         testUser({email: 'subscriber@example.com', role: 'subscriber'});
         testUser({email: 'user@example.com', role: 'user'});
 
-        const poll = testPoll(savedAdmin.id);
+        const poll = testPoll({ userId: savedAdmin.id });
         const savedPoll = await poll.save();
 
         expect(savedPoll._id).toBeDefined();
@@ -40,8 +40,8 @@ describe('Poll Model', () => {
         testUser({email: 'subscriber2@example.com', role: 'subscriber'});
         testUser({email: 'user2@example.com', role: 'user'});
 
-        const poll1 = testPoll(savedAdmin.id);
-        const poll2 = testPoll(savedAdmin.id);
+        const poll1 = testPoll({ userId: savedAdmin.id });
+        const poll2 = testPoll({ userId: savedAdmin.id });
 
         const savedPoll1 = await poll1.save();
         const savedPoll2 = await poll2.save();

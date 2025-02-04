@@ -8,7 +8,6 @@ export default class PollController {
 
             res.status(200).json({ polls });
         } catch (error) {
-            console.error('Error fetching polls:', error);
             res.status(500).json({ error: 'Failed to fetch polls' });
         }
     }
@@ -25,7 +24,6 @@ export default class PollController {
 
             res.status(200).json({ poll });
         } catch (error) {
-            console.error('Error fetching poll:', error);
             res.status(500).json({ error: 'Failed to fetch poll' });
         }
     }
@@ -37,7 +35,6 @@ export default class PollController {
 
             res.status(200).json({ poll });
         } catch (error) {
-            console.error('Error creating poll:', error);
             res.status(400).json({ error: error });
         }
     }
@@ -61,7 +58,6 @@ export default class PollController {
 
             res.status(200).json({ poll });
         } catch (error) {
-            console.error('Error updating poll:', error);
             res.status(500).json({ error: 'Failed to update poll' });
         }
     }
@@ -79,7 +75,6 @@ export default class PollController {
             await poll.deleteOne();
             res.status(200).json({ message: 'Poll deleted successfully' });
         } catch (error) {
-            console.error('Error deleting poll:', error);
             res.status(500).json({ error: 'Failed to delete poll' });
         }
     }
@@ -96,7 +91,6 @@ export default class PollController {
 
             res.status(200).json({ messages: poll.messages });
         } catch (error) {
-            console.error('Error fetching poll chat:', error);
             res.status(500).json({ error: 'Failed to fetch poll chat' });
         }
     }
@@ -119,7 +113,6 @@ export default class PollController {
 
             res.status(200).json({ messages: poll.messages });
         } catch (error) {
-            console.error('Error adding message to poll:', error);
             res.status(500).json({ error: 'Failed to add message to poll' });
         }
     }
