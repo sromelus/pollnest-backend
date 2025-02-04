@@ -1,10 +1,10 @@
 import { Vote } from '../../src/models'
 
-export const testVote = (pollId: any, voterId: any, pollOptionText: string) => {
+export const testVote = (options: {pollId: any, voterId: any, pollOptionText: string} = {pollId: '123', voterId: '123', pollOptionText: 'trump'}) => {
     const vote = new Vote({
-        pollId,
-        pollOptionText,
-        voterId,
+        pollId: options.pollId,
+        pollOptionText: options.pollOptionText,
+        voterId: options.voterId,
         voterIp: '23',
         voterCountry: 'US',
         voterRegion: 'MA',

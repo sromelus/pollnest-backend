@@ -1,11 +1,19 @@
 import { User } from '../../src/models'
 
-export const testUser = (options: {email: string, role: string} = {email: 'test@example.com', role: 'user'}) => {
-    const user = new User({
+export const testUser = (
+    options: {firstName: string, lastName: string, email: string, password: string, role: string} = {
         firstName: 'Test',
         lastName: 'User',
-        email: options.email,
+        email: 'test@example.com',
         password: '12345678Aa!',
+        role: 'user'
+    }
+) => {
+    const user = new User({
+        firstName: options.firstName,
+        lastName: options.lastName,
+        email: options.email,
+        password: options.password,
         role: options.role
     });
 
