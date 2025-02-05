@@ -21,7 +21,7 @@ describe('Vote Model', () => {
         const poll = testPoll({ userId: subscriber.id });
         const savedPoll = await poll.save();
 
-        const vote = testVote({pollId: savedPoll.id, voterId: subscriber.id, pollOptionText: 'trump'})
+        const vote = testVote({pollId: savedPoll.id, voterId: subscriber.id, voteOptionText: 'trump'})
         const savedVote = await vote.save();
 
         expect(savedVote._id).toBeDefined();
@@ -29,14 +29,14 @@ describe('Vote Model', () => {
 
     //Sad Path
     it('should not create a vote when pollId or pollOptionText is missing', async () => {
-        const vote = testVote({pollId: null, voterId: null, pollOptionText: ''})
+        const vote = testVote({pollId: null, voterId: null, voteOptionText: ''})
 
         try {
             await vote.save();
             fail('Should not succeed in creating vote');
         } catch(error) {
             expect((error as any).errors.pollId.message).toBe('Path `pollId` is required.');
-            expect((error as any).errors.pollOptionText.message).toBe('Path `pollOptionText` is required.');
+            expect((error as any).errors.voteOptionText.message).toBe('Path `voteOptionText` is required.');
         }
     });
 
@@ -47,13 +47,13 @@ describe('Vote Model', () => {
         const poll = testPoll({ userId: subscriber.id });
         const savedPoll = await poll.save();
 
-        const vote = testVote({pollId: savedPoll.id, voterId: subscriber.id, pollOptionText: 'wrongOption'})
+        const vote = testVote({pollId: savedPoll.id, voterId: subscriber.id, voteOptionText: 'wrongOption'})
 
         try {
             await vote.save();
             fail('Should not succeed in creating vote');
         } catch(error) {
-            expect((error as any).errors.pollOptionText.message).toBe('Vote option must be one of the valid options from the poll.');
+            expect((error as any).errors.voteOptionText.message).toBe('Vote option must be one of the valid options from the poll.');
         }
     });
 });

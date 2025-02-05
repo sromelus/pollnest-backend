@@ -10,7 +10,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
     await dropDatabase();
-    await User.syncIndexes();
+    await User.syncIndexes(); // reset indexes for testing
 });
 
 afterAll(async () => {

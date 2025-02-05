@@ -3,7 +3,6 @@ import request from 'supertest';
 import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/dbTestConfig';
 import { testPoll, testUser } from "../factories";
 import routes from '../../src/routes';
-import { User } from '../../src/models';
 
 
 beforeAll(async () => {
@@ -12,7 +11,6 @@ beforeAll(async () => {
 
 beforeEach(async () => {
     await dropDatabase();
-    await User.syncIndexes();
 });
 
 afterAll(async () => {

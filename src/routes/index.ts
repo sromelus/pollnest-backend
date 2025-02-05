@@ -3,6 +3,7 @@ import registrationRoutes from './registrationRoutes';
 import userRoutes from './userRoutes';
 import authRoutes from './authRoutes';
 import pollRoutes from './pollRoutes';
+import voteRoutes from './voteRoutes';
 
 const router = Router();
 
@@ -22,6 +23,10 @@ const defaultRoutes = [
     {
         path: '/polls',
         route: pollRoutes
+    },
+    {
+        path: '/polls/:id/votes',
+        route: voteRoutes
     }
 ]
 

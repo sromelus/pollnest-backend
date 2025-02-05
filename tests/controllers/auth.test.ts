@@ -1,7 +1,6 @@
 import request from "supertest";
 import express from "express";
 import routes from "../../src/routes";
-import { User } from "../../src/models";
 import { dbConnect, dbDisconnect, dropDatabase } from "../helpers/dbTestConfig";
 import { testUser } from "../factories";
 
@@ -11,7 +10,6 @@ beforeAll(async () => {
 
 beforeEach(async () => {
     await dropDatabase();
-    await User.syncIndexes();
 });
 
 afterAll(async () => {

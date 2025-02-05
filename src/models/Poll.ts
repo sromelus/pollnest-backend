@@ -19,10 +19,9 @@ type MessageType = {
     createdAt: Date
 }
 
-type VoteOptionType = {
-    id: String,
+type PollOptionType = {
     image: String,
-    voteButtonText: String,
+    pollOptionText: String,
     count: {type: Number, default: 0}
 }
 
@@ -69,13 +68,13 @@ const PollSchema: Schema = new Schema({
         },
         pollOptions: {
             type: [{
-                id: String,
+                id: {type: mongoose.Schema.Types.ObjectId},
                 image: String,
                 pollOptionText: String,
                 count: {type: Number, default: 0}
             }],
             validate: {
-                validator: function(pollOptions: Array<VoteOptionType>) {
+                validator: function(pollOptions: Array<PollOptionType>) {
                     return pollOptions.length >= 2
                 },
                 message: 'You should provide at least 2 poll options'

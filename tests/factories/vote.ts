@@ -4,7 +4,7 @@ export const testVote = (
         options: {
             pollId?: any,
             voterId?: any,
-            pollOptionText?: string,
+            voteOptionText?: string,
             voterIp?: string,
             voterCountry?: string,
             voterRegion?: string,
@@ -16,7 +16,7 @@ export const testVote = (
         const defaults = {
             pollId: '123',
             voterId: '123',
-            pollOptionText: 'trump',
+            voteOptionText: 'trump',
             voterIp: '23',
             voterCountry: 'US',
             voterRegion: 'MA',

@@ -1,9 +1,8 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import Poll from '../../src/models/Poll';
 
 export interface Vote extends Document {
   pollId: string,
-  pollOptionText: string;
+  voteOptionText: string;
   voterId: string;
   voterEthnicity: string;
   voterGender: string;
@@ -13,16 +12,18 @@ export interface Vote extends Document {
 const VoteSchema: Schema = new Schema({
     pollId: {
       type: mongoose.Schema.Types.ObjectId,
+      ref: 'Poll',
       required: true
     },
-    pollOptionText: {
+    voteOptionText: {
       type: String,
       required: true,
       validate: {
-        validator: async function(this: any, pollOptionText: string) {
+        validator: async function(this: any, voteOptionText: string) {
+          const Poll = mongoose.model('Poll');
           const poll = await Poll.findById(this.pollId);
           if(!poll) return false;
-          return (poll.pollOptions as Array<{ pollOptionText: string }>).some((option) => option.pollOptionText === pollOptionText);
+          return (poll.pollOptions as Array<{ pollOptionText: string }>).some((option) => option.pollOptionText === voteOptionText);
         },
         message: 'Vote option must be one of the valid options from the poll.'
       }
