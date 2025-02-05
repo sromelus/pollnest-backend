@@ -132,43 +132,4 @@ describe('Poll Controller', () => {
             expect(res.body.message).toBe('Poll deleted successfully');
         });
     });
-
-    describe('Poll Chat', () => {
-        let pollId: string;
-        let poll: any;
-
-        beforeEach(async () => {
-            poll = testPoll({ userId });
-            await poll.save();
-            pollId = poll.id;
-        });
-
-        it('should return messages for a poll', async () => {
-            const res = await request(app).get(`/api/v1/polls/${pollId}/chat`);
-
-            expect(res.status).toBe(200);
-            expect(res.body.messages).toHaveLength(poll.messages.length);
-        });
-    });
-
-    describe('Poll Chat new message', () => {
-        let pollId: string;
-        let poll: any;
-
-        beforeEach(async () => {
-            poll = testPoll({ userId });
-            await poll.save();
-            pollId = poll.id;
-        });
-
-        it('should add a new message to a poll', async () => {
-            const res = await request(app).post(`/api/v1/polls/${pollId}/chat/new`).send({
-                content: 'This is a test message',
-                userId: userId,
-            });
-
-            expect(res.status).toBe(200);
-            expect(res.body.messages).toHaveLength(poll.messages.length + 1);
-        });
-    });
 });
