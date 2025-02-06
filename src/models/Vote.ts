@@ -13,17 +13,29 @@ const VoteSchema: Schema = new Schema({
     pollId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Poll',
+      validate: {
+        validator: async function(this: any, pollId: string) {
+          const Poll = mongoose.model('Poll');
+          const poll = await Poll.findById(pollId);
+          return poll !== null;
+        },
+        message: 'Poll not found'
+      },
       required: true
     },
     voteOptionText: {
       type: String,
       required: true,
+    },
+    voterVoteOptionId: {
+      type: String,
+      required: true,
       validate: {
-        validator: async function(this: any, voteOptionText: string) {
+        validator: async function(this: any, voterVoteOptionId: string) {
           const Poll = mongoose.model('Poll');
           const poll = await Poll.findById(this.pollId);
           if(!poll) return false;
-          return (poll.pollOptions as Array<{ pollOptionText: string }>).some((option) => option.pollOptionText === voteOptionText);
+          return (poll.pollOptions as Array<{ _id: string }>).some((option) => option._id == voterVoteOptionId);
         },
         message: 'Vote option must be one of the valid options from the poll.'
       }
@@ -50,11 +62,9 @@ const VoteSchema: Schema = new Schema({
     },
     voterEthnicity: {
       type: String,
-      required: true
     },
     voterGender: {
       type: String,
-      required: true
     }
   },
   {

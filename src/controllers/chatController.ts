@@ -22,6 +22,7 @@ export default class ChatController {
         try {
             const { id } = req.params;
             const { content, userId } = req.body;
+            console.log('************************************************* ', req.body, id);
             const poll = await Poll.findById(id);
 
             if (!poll) {
@@ -36,6 +37,11 @@ export default class ChatController {
 
             res.status(200).json({ messages: poll.messages });
         } catch (error) {
+            if ((error as Error).name === 'ValidationError') {
+                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
+                return;
+            }
+
             res.status(500).json({ error: 'Failed to add message to poll' });
         }
     }

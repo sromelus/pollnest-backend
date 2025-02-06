@@ -39,8 +39,16 @@ describe('Vote Controller', () => {
 
         //get the vote tally after the vote is created
         const res = await request(app).post(`/api/v1/polls/${poll.id}/votes`).send({
-            ...testVote({ pollId: poll.id, voterId, voteOptionText: 'kamala' }),
-            voterVoteOptionId: kamalaVote._id
+            pollId: poll.id,
+            voterId,
+            voterEthnicity: 'black',
+            voterGender: 'male',
+            voteOptionText: 'kamala',
+            voterVoteOptionId: kamalaVote._id,
+            voterIp: '123',
+            voterCountry: 'US',
+            voterRegion: 'MA',
+            voterCity: 'Natick'
         })
 
         const kamalaOptionTally = res.body.voteTally.find((option: any) => option._id == kamalaVote._id);
@@ -54,11 +62,21 @@ describe('Vote Controller', () => {
     })
 
 
-    it('should not create a vote if the option is not found', async () => {
+    it('should not create a vote if the voterVoteOptionId is not found', async () => {
         const res = await request(app).post(`/api/v1/polls/${poll.id}/votes`).send({
-            ...testVote({ pollId: poll.id, voterId, voteOptionText: 'trump' }),
-            voterVoteOptionId: '67a2fc834e011d27320e4e79'
+            pollId: poll.id,
+            voterId,
+            voterEthnicity: 'black',
+            voterGender: 'male',
+            voteOptionText: 'kamala',
+            voterVoteOptionId: '67a2fc834e011d27320e4e79',
+            voterIp: '123',
+            voterCountry: 'US',
+            voterRegion: 'MA',
+            voterCity: 'Natick',
         })
-        expect(res.status).toBe(404);
+
+        expect(res.status).toBe(400);
+        expect(res.body.errors).toBe('Vote validation failed: voterVoteOptionId: Vote option must be one of the valid options from the poll.');
     })
 })

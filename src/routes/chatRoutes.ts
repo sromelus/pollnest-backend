@@ -2,7 +2,7 @@ import { RequestHandler, Router } from 'express';
 import { ChatController } from '../controllers';
 import rateLimit from 'express-rate-limit';
 import { validateVote, validateMessage } from '../middlewares';
-const router = Router();
+const router = Router({ mergeParams: true });
 
 const getVotesLimiter = rateLimit({
     // windowMs: 2 * 60 * 1000,

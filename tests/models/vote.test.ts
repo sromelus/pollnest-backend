@@ -21,15 +21,23 @@ describe('Vote Model', () => {
         const poll = testPoll({ userId: subscriber.id });
         const savedPoll = await poll.save();
 
-        const vote = testVote({pollId: savedPoll.id, voterId: subscriber.id, voteOptionText: 'trump'})
+        const vote = testVote(
+            {
+                pollId: savedPoll.id,
+                voterId: subscriber.id,
+                voteOptionText: 'trump',
+                voterVoteOptionId: (savedPoll.pollOptions[0] as any)._id,
+                voterEthnicity: 'white',
+                voterGender: 'male'
+            })
         const savedVote = await vote.save();
 
         expect(savedVote._id).toBeDefined();
     });
 
     //Sad Path
-    it('should not create a vote when pollId or pollOptionText is missing', async () => {
-        const vote = testVote({pollId: null, voterId: null, voteOptionText: ''})
+    it('should not create a vote when pollId or voterVoteOptionId is missing', async () => {
+        const vote = testVote({pollId: null, voterId: null, voteOptionText: '', voterVoteOptionId: ''})
 
         try {
             await vote.save();
@@ -41,19 +49,19 @@ describe('Vote Model', () => {
     });
 
     // Sad Path
-    it('should not create a vote when pollOptionText is not valid', async () => {
+    it('should not create a vote when voterVoteOptionId is not valid', async () => {
         const subscriber = testUser({firstName: 'Jane', lastName: 'Doe', email: 'jane2@example.com', password: '12345678Aa!', role: 'subscriber'});
         await subscriber.save();
         const poll = testPoll({ userId: subscriber.id });
         const savedPoll = await poll.save();
 
-        const vote = testVote({pollId: savedPoll.id, voterId: subscriber.id, voteOptionText: 'wrongOption'})
+        const vote = testVote({pollId: savedPoll.id, voterId: subscriber.id, voterVoteOptionId: '123'})
 
         try {
             await vote.save();
             fail('Should not succeed in creating vote');
         } catch(error) {
-            expect((error as any).errors.voteOptionText.message).toBe('Vote option must be one of the valid options from the poll.');
+            expect((error as any).errors.voterVoteOptionId.message).toBe('Vote option must be one of the valid options from the poll.');
         }
     });
 });

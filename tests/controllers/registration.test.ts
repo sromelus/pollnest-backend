@@ -59,7 +59,7 @@ describe('User Registration', () => {
       });
 
       expect(res.status).toBe(400);
-      expect(res.body).toHaveProperty('error');
+      expect(res.body.errors).toBe("User validation failed: email: Invalid email format");
     });
 
     it('should fail when password is too short', async () => {
@@ -70,7 +70,7 @@ describe('User Registration', () => {
       });
 
       expect(res.status).toBe(400);
-      expect(res.body).toHaveProperty('error');
+      expect(res.body.errors).toBe("User validation failed: password: Password must be at least 8 characters long");
     });
 
     it('should fail when name is missing', async () => {
@@ -80,7 +80,7 @@ describe('User Registration', () => {
       });
 
       expect(res.status).toBe(400);
-      expect(res.body).toHaveProperty('error');
+      expect(res.body.errors).toBe("User validation failed: firstName: Path `firstName` is required.");
     });
 
     it('should fail when name is too long', async () => {
@@ -91,8 +91,7 @@ describe('User Registration', () => {
       });
 
       expect(res.status).toBe(400);
-      expect(res.body).toHaveProperty('error');
-      expect(res.body.error).toEqual('User validation failed: firstName: First name cannot exceed 30 characters, lastName: Last name cannot exceed 30 characters');
+      expect(res.body.errors).toEqual('User validation failed: firstName: First name cannot exceed 30 characters, lastName: Last name cannot exceed 30 characters');
     });
   });
 
@@ -100,18 +99,18 @@ describe('User Registration', () => {
     it('should fail when email already exists', async () => {
       await request(app).post('/api/v1/registration/signup').send({
         name: 'John Doe',
-        email: 'john@example.com',
+        email: 'john1@example.com',
         password: 'ValidPass123!'
       });
 
       const res = await request(app).post('/api/v1/registration/signup').send({
         name: 'Another John',
-        email: 'john@example.com',
+        email: 'john1@example.com',
         password: 'AnotherPass123!'
       });
 
       expect(res.status).toBe(400);
-      expect(res.body).toHaveProperty('error');
+      expect(res.body.errors).toBe("User validation failed: email: Email already exists");
     });
   });
 

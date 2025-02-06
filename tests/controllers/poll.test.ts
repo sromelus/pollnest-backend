@@ -88,10 +88,7 @@ describe('Poll Controller', () => {
             });
 
             expect(res.status).toBe(400);
-            expect(res.body.error.errors.title.message).toBe('Path `title` is required.');
-            expect(res.body.error.errors.description.message).toBe('Path `description` is required.');
-            expect(res.body.error.errors.userId.message).toBe('Path `userId` is required.');
-            expect(res.body.error.errors.pollOptions.message).toBe('You should provide at least 2 poll options');
+            expect(res.body.errors).toBe('Poll validation failed: title: Path `title` is required., description: Path `description` is required., userId: Path `userId` is required., pollOptions: You should provide at least 2 poll options');
         });
     });
 

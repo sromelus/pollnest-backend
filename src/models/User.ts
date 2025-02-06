@@ -31,17 +31,29 @@ const UserSchema: Schema = new Schema({
         },
         email: {
             type: String,
-            required: true,
+            required: [true, 'Email is required'],
             unique: true,
             trim: true,
             lowercase: true,
-            maxLength: [50, 'Email cannot exceed 50 characters'],
-            validate: {
-                validator: function(email: string) {
-                    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+            maxLength: [50, 'Email cannot be more than 50 characters'],
+            validate: [
+                {
+                    validator: function(email: string) {
+                        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+                    },
+                    message: 'Invalid email format'
                 },
-                message: 'Please enter a valid email address'
-            }
+                {
+                    validator: async function(email: string) {
+                        if (this.isModified('email')) {
+                            const user = await this.constructor.findOne({ email: email.toLowerCase() });
+                            return !user;
+                        }
+                        return true;
+                    },
+                    message: 'Email already exists'
+                }
+            ]
         },
         password: {
             type: String,
@@ -66,6 +78,9 @@ const UserSchema: Schema = new Schema({
         timestamps: true
     }
 );
+
+// Ensure index exists
+UserSchema.index({ email: 1 }, { unique: true });
 
 // Add pre-save middleware to hash password
 UserSchema.pre('save', async function(next) {

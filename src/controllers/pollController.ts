@@ -8,6 +8,11 @@ export default class PollController {
 
             res.status(200).json({ polls });
         } catch (error) {
+            if ((error as Error).name === 'ValidationError') {
+                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
+                return;
+            }
+
             res.status(500).json({ error: 'Failed to fetch polls' });
         }
     }
@@ -24,6 +29,11 @@ export default class PollController {
 
             res.status(200).json({ poll });
         } catch (error) {
+            if ((error as Error).name === 'ValidationError') {
+                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
+                return;
+            }
+
             res.status(500).json({ error: 'Failed to fetch poll' });
         }
     }
@@ -35,6 +45,11 @@ export default class PollController {
 
             res.status(200).json({ poll });
         } catch (error) {
+            if ((error as Error).name === 'ValidationError') {
+                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
+                return;
+            }
+
             res.status(400).json({ error: error });
         }
     }
@@ -58,6 +73,11 @@ export default class PollController {
 
             res.status(200).json({ poll });
         } catch (error) {
+            if ((error as Error).name === 'ValidationError') {
+                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
+                return;
+            }
+
             res.status(500).json({ error: 'Failed to update poll' });
         }
     }
@@ -75,6 +95,11 @@ export default class PollController {
             await poll.deleteOne();
             res.status(200).json({ message: 'Poll deleted successfully' });
         } catch (error) {
+            if ((error as Error).name === 'ValidationError') {
+                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
+                return;
+            }
+
             res.status(500).json({ error: 'Failed to delete poll' });
         }
     }
@@ -91,6 +116,10 @@ export default class PollController {
 
             res.status(200).json({ messages: poll.messages });
         } catch (error) {
+            if ((error as Error).name === 'ValidationError') {
+                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
+                return;
+            }
             res.status(500).json({ error: 'Failed to fetch poll chat' });
         }
     }
@@ -113,6 +142,11 @@ export default class PollController {
 
             res.status(200).json({ messages: poll.messages });
         } catch (error) {
+            if ((error as Error).name === 'ValidationError') {
+                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
+                return;
+            }
+
             res.status(500).json({ error: 'Failed to add message to poll' });
         }
     }

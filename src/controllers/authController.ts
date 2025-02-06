@@ -18,6 +18,11 @@ export default class AuthController {
 
             res.json({token});
         } catch (error) {
+            if ((error as Error).name === 'ValidationError') {
+                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
+                return;
+            }
+
             res.status(500).json({ message: 'Internal server error' });
         }
     }

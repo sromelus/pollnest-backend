@@ -28,7 +28,7 @@ const messageLimiter = rateLimit({
 // router.get('/chat', getVotesLimiter, getChatMessages);
 // router.post('/chat', messageLimiter, validateMessage, postMessage as RequestHandler);
 
-router.post('/', voteController.createVote);
+router.post('/', validateVote, voteController.createVote);
 
 
 export default router;

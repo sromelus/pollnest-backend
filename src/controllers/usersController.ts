@@ -26,7 +26,7 @@ export default class UsersController {
     }
 
     static createUser: RequestHandler = async (req, res) => {
-        const { name, email, password } = req.body;
+        const { name, email, password, role } = req.body;
         const { firstName, lastName } = splitFullName(name);
 
         try {
@@ -34,12 +34,18 @@ export default class UsersController {
                 firstName,
                 lastName,
                 email,
-                password
+                password,
+                role
             });
 
-            res.status(200).send({ user: { id: user.id, name: user.firstName + ' ' + user.lastName, email: user.email } });
+            res.status(200).send({ user: { id: user.id, name: user.firstName + ' ' + user.lastName, email: user.email, role: user.role } });
         } catch (error: any) {
-            res.status(400).send({ message: 'User creation failed', error: error.message })
+            if ((error as Error).name === 'ValidationError') {
+                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
+                return;
+            }
+
+            res.status(500).send({ message: 'User creation failed', error: error.message })
         }
     }
 
@@ -77,7 +83,12 @@ export default class UsersController {
                 }
             });
         } catch (error: any) {
-            res.status(400).send({ message: 'User update failed', error: error.message })
+            if ((error as Error).name === 'ValidationError') {
+                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
+                return;
+            }
+
+            res.status(500).send({ message: 'User update failed', error: error.message })
         }
     }
 
@@ -95,7 +106,12 @@ export default class UsersController {
             await user.deleteOne();
             res.status(200).send({ message: 'User deleted successfully' });
         } catch (error: any) {
-            res.status(400).send({ message: 'User deletion failed', error: error.message })
+            if ((error as Error).name === 'ValidationError') {
+                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
+                return;
+            }
+
+            res.status(500).send({ message: 'User deletion failed', error: error.message })
         }
     }
 }

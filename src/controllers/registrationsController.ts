@@ -17,7 +17,12 @@ export default class RegistrationsController {
 
             res.status(200).send({ user: { id: user.id, name: user.firstName + ' ' + user.lastName, email: user.email } })
         } catch (error: any) {
-                res.status(400).send({ message: 'User creation failed', error: error.message })
+            if ((error as Error).name === 'ValidationError') {
+                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
+                return;
+            }
+
+            res.status(500).send({ message: 'User creation failed', error: error.message })
         }
     }
 
@@ -44,7 +49,12 @@ export default class RegistrationsController {
 
             res.status(200).send({ message: 'User updated successfully', user: { id: user.id, name: user.firstName + ' ' + user.lastName, email: user.email } });
         } catch (error: any) {
-            res.status(400).send({ message: 'User deletion failed', error: error.message })
+            if ((error as Error).name === 'ValidationError') {
+                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
+                return;
+            }
+
+            res.status(500).send({ message: 'User deletion failed', error: error.message })
         }
     }
 
@@ -61,6 +71,11 @@ export default class RegistrationsController {
             await user.deleteOne();
             res.status(200).send({ message: 'User deleted successfully' });
         } catch (error: any) {
+            if ((error as Error).name === 'ValidationError') {
+                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
+                return;
+            }
+
             res.status(400).send({ message: 'User deletion failed', error: error.message })
         }
     }

@@ -42,7 +42,7 @@ describe('User Model', () => {
             await userWithBadEmail.save();
             fail('Should not succeed in saving invalid email');
         } catch (error) {
-            expect((error as any).errors.email.message).toBe('Please enter a valid email address');
+            expect((error as any).errors.email.message).toBe('Invalid email format');
         }
     });
 });

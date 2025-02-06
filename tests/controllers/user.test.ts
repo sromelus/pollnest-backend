@@ -71,6 +71,20 @@ describe('User Management', () => {
             expect(res.body.user).toHaveProperty('name', 'Jane Doe');
             expect(res.body.user).toHaveProperty('email', 'jane@example.com');
         });
+
+        it('should create a new user with role successfully', async () => {
+            const res = await request(app).post('/api/v1/users').send({
+                name: 'Jane Doe',
+                email: 'jane@example.com',
+                password: 'ValidPass123!',
+                role: 'admin'
+            });
+
+            expect(res.status).toBe(200);
+            expect(res.body.user).toHaveProperty('name', 'Jane Doe');
+            expect(res.body.user).toHaveProperty('email', 'jane@example.com');
+            expect(res.body.user).toHaveProperty('role', 'admin');
+        });
     });
 
     describe('Update User', () => {
@@ -97,7 +111,7 @@ describe('User Management', () => {
                 });
 
             expect(res.status).toBe(400);
-            expect(res.body).toHaveProperty('error');
+            expect(res.body.errors).toBe("User validation failed: email: Invalid email format");
         });
     });
 
