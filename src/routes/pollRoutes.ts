@@ -1,7 +1,7 @@
 import { RequestHandler, Router } from 'express';
 import { PollController } from '../controllers';
 import rateLimit from 'express-rate-limit';
-import { validateVote, validateMessage } from '../middlewares';
+import { validateVote } from '../validations';
 const router = Router();
 
 const getVotesLimiter = rateLimit({

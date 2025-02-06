@@ -2,7 +2,7 @@ import { RequestHandler, Router } from 'express';
 // import { getVotes, castVote, postMessage, getChatMessages } from '../controllers/voteController';
 import { voteController } from '../controllers';
 import rateLimit from 'express-rate-limit';
-import { validateVote, validateMessage } from '../middlewares';
+import { validateVote } from '../validations';
 const router = Router({ mergeParams: true });
 
 const getVotesLimiter = rateLimit({

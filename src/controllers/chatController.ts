@@ -22,7 +22,7 @@ export default class ChatController {
         try {
             const { id } = req.params;
             const { content, userId } = req.body;
-            console.log('************************************************* ', req.body, id);
+
             const poll = await Poll.findById(id);
 
             if (!poll) {

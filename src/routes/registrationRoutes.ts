@@ -1,7 +1,7 @@
 import { RequestHandler, Router } from 'express';
 import { RegistrationController } from '../controllers';
 import rateLimit from 'express-rate-limit';
-import { validateVote, validateMessage, auth } from '../middlewares';
+import { auth } from '../middlewares';
 const router = Router();
 
 const getVotesLimiter = rateLimit({
