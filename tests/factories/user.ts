@@ -13,7 +13,7 @@ export const testUser = (
             firstName: 'Test',
             lastName: 'User',
             email: 'test@example.com',
-            password: '12345678Aa!',
+            password: 'ValidPass123!',
             role: 'user'
         }
 

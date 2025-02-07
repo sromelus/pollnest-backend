@@ -1,4 +1,4 @@
-import { RequestHandler, Router } from 'express';
+import { Router } from 'express';
 import { ChatController } from '../controllers';
 import rateLimit from 'express-rate-limit';
 import { validateCreateChatMessage } from '../validations';

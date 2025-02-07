@@ -29,7 +29,7 @@ export default class RegistrationsController {
     static updateUser: RequestHandler = async (req, res) => {
         const { name, email, password } = req.body;
 
-        const userId = (req as any).userId;
+        const userId = (req as any).currentUserId;
 
         try {
             const user = await User.findById(userId);
@@ -59,8 +59,8 @@ export default class RegistrationsController {
     }
 
     static deleteUser: RequestHandler = async (req, res) => {
-        const userId = (req as any).userId;
-
+        const userId = (req as any).currentUserId;
+        console.log(userId);
         try {
             const user = await User.findById(userId);
             if (!user) {

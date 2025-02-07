@@ -17,9 +17,12 @@ export const auth = ({ required = true }: { required?: boolean } = {}) => {
 
         const decoded = verifyToken(token);
 
-        if (decoded && typeof decoded === 'object') {
-            (req as any).userId = decoded.userId;
+        if (!decoded || typeof decoded !== 'object' || !('currentUserId' in decoded)) {
+            res.status(401).send({ message: 'Unauthorized' });
+            return;
         }
+
+        (req as any).currentUserId = decoded.currentUserId;
 
         next();
     }

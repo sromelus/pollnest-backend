@@ -23,6 +23,7 @@ app.use('/api/v1', routes)
 
 
 describe('Poll Controller', () => {
+    let authToken: string;
     let userId: string;
 
     beforeEach(async () => {
@@ -30,6 +31,13 @@ describe('Poll Controller', () => {
         user.role = 'admin';
         await user.save();
         userId = user.id;
+
+        const loginRes = await request(app).post('/api/v1/auth/login').send({
+            email: testUser().email,
+            password: testUser().password
+        });
+
+        authToken = loginRes.body.token;
     });
 
     describe('Get Polls', () => {
@@ -65,7 +73,7 @@ describe('Poll Controller', () => {
 
     describe('Create Poll', () => {
         it('should create a poll', async () => {
-            const res = await request(app).post('/api/v1/polls').send({
+            const res = await request(app).post('/api/v1/polls').set('Authorization', `Bearer ${authToken}`).send({
                 title: 'Test Poll',
                 description: 'This is a test poll',
                 pollOptions: [{img: 'trump_img', pollOptionText: 'trump', count: 0}, {img: 'kamala_img', pollOptionText: 'kamala', count: 0}],
@@ -76,7 +84,7 @@ describe('Poll Controller', () => {
         });
 
         it('should not create a poll when missing required fields', async () => {
-            const res = await request(app).post('/api/v1/polls').send({
+            const res = await request(app).post('/api/v1/polls').set('Authorization', `Bearer ${authToken}`).send({
                 //missing fields
                 // title: 'Test Poll',
                 // description: 'This is a test poll',
@@ -101,7 +109,7 @@ describe('Poll Controller', () => {
         });
 
         it('should update a poll', async () => {
-            const res = await request(app).put(`/api/v1/polls/${pollId}`).send({
+            const res = await request(app).put(`/api/v1/polls/${pollId}`).set('Authorization', `Bearer ${authToken}`).send({
                 title: 'Updated Poll',
                 description: 'This is an updated poll',
                 userId: userId,
@@ -122,7 +130,7 @@ describe('Poll Controller', () => {
         });
 
         it('should delete a poll', async () => {
-            const res = await request(app).delete(`/api/v1/polls/${pollId}`);
+            const res = await request(app).delete(`/api/v1/polls/${pollId}`).set('Authorization', `Bearer ${authToken}`);
 
             expect(res.status).toBe(200);
             expect(res.body.message).toBe('Poll deleted successfully');

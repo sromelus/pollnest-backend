@@ -27,21 +27,27 @@ describe('User Management', () => {
 
     // Helper to create a test user before each test
     beforeEach(async () => {
-        const res = await request(app).post('/api/v1/registration/signup').send({
-            name: 'John Doe',
+        const user = await User.create({
+            firstName: 'John',
+            lastName: 'Doe',
             email: 'john@example.com',
             password: 'ValidPass123!'
         });
-        userId = res.body.user.id;
-        // You'll need to implement login and get the auth token
-        // authToken = res.body.token;
+
+        const loginRes = await request(app).post('/api/v1/auth/login').send({
+            email: 'john@example.com',
+            password: 'ValidPass123!'
+        });
+
+        userId = user.id;
+        authToken = loginRes.body.token;
     });
 
     describe('Get User', () => {
         it('should get user profile successfully', async () => {
             const res = await request(app)
                 .get(`/api/v1/users/${userId}`)
-                // .set('Authorization', `Bearer ${authToken}`)
+                .set('Authorization', `Bearer ${authToken}`);
 
             expect(res.status).toBe(200);
             expect(res.body.user).toHaveProperty('name', 'John Doe');
@@ -51,7 +57,9 @@ describe('User Management', () => {
 
     describe('Get Users', () => {
         it('should get all users successfully', async () => {
-            const res = await request(app).get('/api/v1/users');
+            const res = await request(app)
+                .get('/api/v1/users')
+                .set('Authorization', `Bearer ${authToken}`);
 
             expect(res.status).toBe(200);
             expect(res.body.users).toBeInstanceOf(Array);
@@ -61,11 +69,14 @@ describe('User Management', () => {
 
     describe('Create User', () => {
         it('should create a new user successfully', async () => {
-            const res = await request(app).post('/api/v1/users').send({
-                name: 'Jane Doe',
-                email: 'jane@example.com',
-                password: 'ValidPass123!'
-            });
+            const res = await request(app)
+                .post('/api/v1/users')
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    name: 'Jane Doe',
+                    email: 'jane@example.com',
+                    password: 'ValidPass123!'
+                });
 
             expect(res.status).toBe(200);
             expect(res.body.user).toHaveProperty('name', 'Jane Doe');
@@ -73,12 +84,15 @@ describe('User Management', () => {
         });
 
         it('should create a new user with role successfully', async () => {
-            const res = await request(app).post('/api/v1/users').send({
-                name: 'Jane Doe',
-                email: 'jane@example.com',
-                password: 'ValidPass123!',
-                role: 'admin'
-            });
+            const res = await request(app)
+                .post('/api/v1/users')
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    name: 'Jane Doe',
+                    email: 'jane@example.com',
+                    password: 'ValidPass123!',
+                    role: 'admin'
+                });
 
             expect(res.status).toBe(200);
             expect(res.body.user).toHaveProperty('name', 'Jane Doe');
@@ -91,7 +105,7 @@ describe('User Management', () => {
         it('should update user profile successfully', async () => {
             const res = await request(app)
                 .put(`/api/v1/users/${userId}`)
-                // .set('Authorization', `Bearer ${authToken}`)
+                .set('Authorization', `Bearer ${authToken}`)
                 .send({
                     name: 'John Updated',
                     email: 'john.updated@example.com'
@@ -105,7 +119,7 @@ describe('User Management', () => {
         it('should fail to update with invalid email', async () => {
             const res = await request(app)
                 .put(`/api/v1/users/${userId}`)
-                // .set('Authorization', `Bearer ${authToken}`)
+                .set('Authorization', `Bearer ${authToken}`)
                 .send({
                     email: 'invalid-email'
                 });
@@ -119,7 +133,7 @@ describe('User Management', () => {
         it('should delete user successfully', async () => {
             const res = await request(app)
                 .delete(`/api/v1/users/${userId}`)
-                // .set('Authorization', `Bearer ${authToken}`);
+                .set('Authorization', `Bearer ${authToken}`);
 
             expect(res.status).toBe(200);
 
@@ -132,7 +146,7 @@ describe('User Management', () => {
             const fakeId = '507f1f77bcf86cd799439011';
             const res = await request(app)
                 .delete(`/api/v1/users/${fakeId}`)
-                // .set('Authorization', `Bearer ${authToken}`);
+                .set('Authorization', `Bearer ${authToken}`);
 
             expect(res.status).toBe(404);
         });

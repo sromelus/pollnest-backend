@@ -9,7 +9,7 @@ export function generateToken(userId: string): string {
     if (!secret) {
         throw new Error('JWT_SECRET is not configured');
     }
-    return jwt.sign({ userId }, secret, { expiresIn: '5m' });
+    return jwt.sign({ currentUserId: userId }, secret, { expiresIn: '5m' });
 }
 
 export function verifyToken(token: string): string | jwt.JwtPayload {

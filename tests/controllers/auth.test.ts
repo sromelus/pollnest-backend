@@ -24,7 +24,7 @@ app.use('/api/v1', routes);
 
 describe('Auth Controller', () => {
     beforeEach(async () => {
-        const user = testUser({email: "john@example.com"});
+        const user = testUser({email: "john@example.com", password: "ValidPass123!"});
         await user.save();
     });
 
@@ -32,7 +32,7 @@ describe('Auth Controller', () => {
         it('should login user successfully', async () => {
             const res = await request(app).post('/api/v1/auth/login').send({
                 email: 'john@example.com',
-                password: '12345678Aa!'
+                password: 'ValidPass123!'
             });
 
             expect(res.status).toBe(200);
@@ -54,7 +54,7 @@ describe('Auth Controller', () => {
         it('should logout user successfully', async () => {
             const loginRes = await request(app).post('/api/v1/auth/login').send({
                 email: 'john@example.com',
-                password: '12345678Aa!'
+                password: 'ValidPass123!'
             });
 
             const token = loginRes.body.token;

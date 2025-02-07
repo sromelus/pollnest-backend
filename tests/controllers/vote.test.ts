@@ -21,6 +21,7 @@ app.use(express.json());
 app.use("/api/v1", routes);
 
 describe('Vote Controller', () => {
+    let authToken: string;
     let poll: any;
     let voterId: string;
 
@@ -31,6 +32,13 @@ describe('Vote Controller', () => {
         await pollObj.save();
         poll = pollObj;
         voterId = user.id;
+
+        const loginRes = await request(app).post('/api/v1/auth/login').send({
+            email: testUser().email,
+            password: testUser().password
+        });
+
+        authToken = loginRes.body.token;
     });
 
     it('should create a vote', async () => {
@@ -38,7 +46,7 @@ describe('Vote Controller', () => {
         const kamalaVote = poll.pollOptions.find((option: any) => option.pollOptionText === 'kamala');
 
         //get the vote tally after the vote is created
-        const res = await request(app).post(`/api/v1/polls/${poll.id}/votes`).send({
+        const res = await request(app).post(`/api/v1/polls/${poll.id}/votes`).set('Authorization', `Bearer ${authToken}`).send({
             pollId: poll.id,
             voterId,
             voterEthnicity: 'black',
@@ -53,8 +61,6 @@ describe('Vote Controller', () => {
 
         const kamalaOptionTally = res.body.voteTally.find((option: any) => option._id == kamalaVote._id);
 
-        // .set('Authorization', `Bearer ${token}`);
-
         expect(res.status).toBe(201);
         expect(res.body).toHaveProperty('voteTally');
         expect(JSON.stringify(res.body.voteTally)).not.toEqual(JSON.stringify(poll.pollOptions));
@@ -63,7 +69,7 @@ describe('Vote Controller', () => {
 
 
     it('should not create a vote if the voterVoteOptionId is not found', async () => {
-        const res = await request(app).post(`/api/v1/polls/${poll.id}/votes`).send({
+        const res = await request(app).post(`/api/v1/polls/${poll.id}/votes`).set('Authorization', `Bearer ${authToken}`).send({
             pollId: poll.id,
             voterId,
             voterEthnicity: 'black',
