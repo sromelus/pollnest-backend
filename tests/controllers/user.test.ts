@@ -111,7 +111,7 @@ describe('User Management', () => {
                 });
 
             expect(res.status).toBe(400);
-            expect(res.body.errors).toBe("User validation failed: email: Invalid email format");
+            expect(res.body.errors).toBe("Invalid value");
         });
     });
 

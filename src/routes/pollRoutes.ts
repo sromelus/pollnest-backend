@@ -1,7 +1,7 @@
 import { RequestHandler, Router } from 'express';
 import { PollController } from '../controllers';
 import rateLimit from 'express-rate-limit';
-import { validateVote } from '../validations';
+import { validatePoll, validatePollUpdate } from '../validations';
 const router = Router();
 
 const getVotesLimiter = rateLimit({
@@ -26,10 +26,8 @@ const messageLimiter = rateLimit({
 
 router.get('/', PollController.getPolls);
 router.get('/:id', PollController.getPoll);
-router.post('/', PollController.createPoll);
-router.put('/:id', PollController.updatePoll);
+router.post('/', validatePoll, PollController.createPoll);
+router.put('/:id', validatePollUpdate, PollController.updatePoll);
 router.delete('/:id', PollController.deletePoll);
-router.get('/:id/chat', PollController.getPollChat);
-router.post('/:id/chat/new', PollController.createPollChatMessage);
 
 export default router;

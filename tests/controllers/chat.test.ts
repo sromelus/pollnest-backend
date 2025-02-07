@@ -61,7 +61,7 @@ describe('Chat Controller', () => {
         });
 
         it('should add a new message to a poll chat', async () => {
-            const res = await request(app).post(`/api/v1/polls/${pollId}/chat/new`).send({
+            const res = await request(app).post(`/api/v1/polls/${pollId}/chat/message`).send({
                 content: 'This is a test message',
                 userId: userId,
             });

@@ -1,6 +1,7 @@
 import { RequestHandler, Router } from 'express';
 import { RegistrationController } from '../controllers';
 import rateLimit from 'express-rate-limit';
+import { validateUser, validateUpdateUser } from '../validations';
 import { auth } from '../middlewares';
 const router = Router();
 
@@ -24,8 +25,8 @@ const messageLimiter = rateLimit({
 
 // router.get('/', getVotesLimiter, registrationController.signUp);
 
-router.post('/signup', RegistrationController.signup);
-router.post('/update', auth(), RegistrationController.updateUser);
+router.post('/signup', validateUser, RegistrationController.signup);
+router.post('/update', auth(), validateUpdateUser, RegistrationController.updateUser);
 router.delete('/delete', auth(), RegistrationController.deleteUser);
 
 export default router;

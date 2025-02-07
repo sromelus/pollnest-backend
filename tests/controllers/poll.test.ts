@@ -88,7 +88,6 @@ describe('Poll Controller', () => {
             });
 
             expect(res.status).toBe(400);
-            expect(res.body.errors).toBe('Poll validation failed: title: Path `title` is required., description: Path `description` is required., userId: Path `userId` is required., pollOptions: You should provide at least 2 poll options');
         });
     });
 

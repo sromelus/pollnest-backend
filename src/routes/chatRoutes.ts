@@ -1,7 +1,7 @@
 import { RequestHandler, Router } from 'express';
 import { ChatController } from '../controllers';
 import rateLimit from 'express-rate-limit';
-import { validateGetChat, validateCreateChat } from '../validations';
+import { validateCreateChatMessage } from '../validations';
 const router = Router({ mergeParams: true });
 
 const getVotesLimiter = rateLimit({
@@ -25,6 +25,6 @@ const messageLimiter = rateLimit({
 // router.get('/', getVotesLimiter, registrationController.signUp);
 
 router.get('/', ChatController.getChat);
-router.post('/', ChatController.createChatMessage);
+router.post('/message', validateCreateChatMessage, ChatController.createChatMessage);
 
 export default router;

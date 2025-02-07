@@ -3,11 +3,32 @@ import { Request, Response, NextFunction, RequestHandler } from 'express';
 
 // Validation middleware
 export const validatePoll: RequestHandler[] = [
-  body('pollId').isMongoId().withMessage('Invalid poll ID'),
-  body('voterId').isString().withMessage('Invalid voter ID'),
-  body('voterVoteOptionId').isString().isLength({ min: 24, max: 24 }).withMessage('Invalid voter vote option ID'),
-  body('voterEthnicity').isString().isIn(['white', 'black', 'hispanic', 'asian', 'other']).withMessage('Invalid voter ethnicity. Must be either white, black, hispanic, asian, or other'),
-  body('voterGender').isString().isIn(['male', 'female', 'non-binary', 'other']).withMessage('Invalid voter gender. Must be either male, female, non-binary, or other'),
+  body('title').isString().withMessage('Title must be a string'),
+  body('description').isString().withMessage('Description must be a string'),
+  body('pollOptions')
+    .isArray({ min: 2 }).withMessage('At least 2 poll options are required')
+    .custom((options) => {
+      return options.every((option: any) =>
+        typeof option.pollOptionText === 'string' && option.pollOptionText.length > 0
+      );
+    }).withMessage('Each poll option must have valid text'),
+  body('userId').isString().withMessage('User ID must be a string'),
+
+  (req: Request, res: Response, next: NextFunction): void => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ success: false, errors: errors.array() });
+      return;
+    }
+    next();
+  }
+];
+
+export const validatePollUpdate: RequestHandler[] = [
+  body('title').optional().isString().withMessage('Title must be a string'),
+  body('description').optional().isString().withMessage('Description must be a string'),
+  body('pollOptions').optional().isArray().withMessage('Poll options must be an array'),
+  body('userId').optional().isString().withMessage('User ID must be a string'),
 
   (req: Request, res: Response, next: NextFunction): void => {
     const errors = validationResult(req);

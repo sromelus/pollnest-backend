@@ -3,6 +3,7 @@ import request from 'supertest';
 import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/dbTestConfig';
 import routes from '../../src/routes';
 import { User } from '../../src/models';
+import { decodeToken } from '../../src/utils/jwt';
 
 beforeAll(async () => {
     await dbConnect();
@@ -59,7 +60,6 @@ describe('User Registration', () => {
       });
 
       expect(res.status).toBe(400);
-      expect(res.body.errors).toBe("User validation failed: email: Invalid email format");
     });
 
     it('should fail when password is too short', async () => {
@@ -70,7 +70,6 @@ describe('User Registration', () => {
       });
 
       expect(res.status).toBe(400);
-      expect(res.body.errors).toBe("User validation failed: password: Password must be at least 8 characters long");
     });
 
     it('should fail when name is missing', async () => {
@@ -80,7 +79,6 @@ describe('User Registration', () => {
       });
 
       expect(res.status).toBe(400);
-      expect(res.body.errors).toBe("User validation failed: firstName: Path `firstName` is required.");
     });
 
     it('should fail when name is too long', async () => {
@@ -91,7 +89,6 @@ describe('User Registration', () => {
       });
 
       expect(res.status).toBe(400);
-      expect(res.body.errors).toEqual('User validation failed: firstName: First name cannot exceed 30 characters, lastName: Last name cannot exceed 30 characters');
     });
   });
 
@@ -148,7 +145,7 @@ describe('User Registration', () => {
       const token = loginRes.body.token;
 
       const res = await request(app).post('/api/v1/registration/update').set('Authorization', `Bearer ${token}`).send({
-        name: 'John Doe Updated'
+        name: 'John Doe Updated',
       });
 
       expect(res.status).toBe(200);

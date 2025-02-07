@@ -1,8 +1,13 @@
 import { validateVote } from "./validateVote";
-import { validateGetChat, validateCreateChat } from "./validateChat";
+import { validateCreateChatMessage } from "./validateChat";
+import { validateUser, validateUpdateUser } from "./validateUser";
+import { validatePoll, validatePollUpdate } from "./validatePoll";
 
 export {
     validateVote,
-    validateGetChat,
-    validateCreateChat,
+    validateCreateChatMessage,
+    validateUser,
+    validateUpdateUser,
+    validatePoll,
+    validatePollUpdate,
 };
