@@ -9,10 +9,10 @@ export const validatePoll: RequestHandler[] = [
     .isArray({ min: 2 }).withMessage('At least 2 poll options are required')
     .custom((options) => {
       return options.every((option: any) =>
-        typeof option.pollOptionText === 'string' && option.pollOptionText.length > 0
+        typeof option.pollOptionText === 'string' && option.pollOptionText.length >= 2
       );
     }).withMessage('Each poll option must have valid text'),
-  body('userId').isString().withMessage('User ID must be a string'),
+  body('creatorId').isString().withMessage('Creator ID must be a string'),
 
   (req: Request, res: Response, next: NextFunction): void => {
     const errors = validationResult(req);

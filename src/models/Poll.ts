@@ -40,7 +40,7 @@ const PollSchema: Schema = new Schema({
             type: String,
             required: true,
         },
-        userId: {
+        creatorId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
             validate: {

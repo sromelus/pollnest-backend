@@ -24,13 +24,13 @@ app.use('/api/v1', routes)
 
 describe('Poll Controller', () => {
     let authToken: string;
-    let userId: string;
+    let creatorId: string;
 
     beforeEach(async () => {
         const user = testUser();
         user.role = 'admin';
         await user.save();
-        userId = user.id;
+        creatorId = user.id;
 
         const loginRes = await request(app).post('/api/v1/auth/login').send({
             email: testUser().email,
@@ -42,8 +42,8 @@ describe('Poll Controller', () => {
 
     describe('Get Polls', () => {
         it('should get a poll', async () => {
-            const poll1 = testPoll({ userId });
-            const poll2 = testPoll({ userId });
+            const poll1 = testPoll({ creatorId });
+            const poll2 = testPoll({ creatorId });
             await poll1.save();
             await poll2.save();
             const res = await request(app).get(`/api/v1/polls`);
@@ -55,7 +55,7 @@ describe('Poll Controller', () => {
 
     describe('Get Poll', () => {
         it('should get a poll', async () => {
-            const poll = testPoll({ userId });
+            const poll = testPoll({ creatorId });
             await poll.save();
             const res = await request(app).get(`/api/v1/polls/${poll.id}`);
 
@@ -71,13 +71,24 @@ describe('Poll Controller', () => {
         });
     });
 
+    describe('Get Poll Options', () => {
+        it('should get poll options', async () => {
+            const poll = testPoll({ creatorId });
+            await poll.save();
+            const res = await request(app).get(`/api/v1/polls/${poll.id}/options`);
+
+            expect(res.status).toBe(200);
+            expect(res.body.voteTally).toHaveLength(2);
+        });
+    });
+
     describe('Create Poll', () => {
         it('should create a poll', async () => {
             const res = await request(app).post('/api/v1/polls').set('Authorization', `Bearer ${authToken}`).send({
                 title: 'Test Poll',
                 description: 'This is a test poll',
-                pollOptions: [{img: 'trump_img', pollOptionText: 'trump', count: 0}, {img: 'kamala_img', pollOptionText: 'kamala', count: 0}],
-                userId: userId,
+                pollOptions: [{image: 'trump_img', pollOptionText: 'trump', count: 0}, {image: 'kamala_img', pollOptionText: 'kamala', count: 0}],
+                creatorId: creatorId,
             });
 
             expect(res.status).toBe(200);
@@ -88,10 +99,10 @@ describe('Poll Controller', () => {
                 //missing fields
                 // title: 'Test Poll',
                 // description: 'This is a test poll',
-                // userId: userId,
+                // creatorId: creatorId,
                 pollOptions: [
-                    {img: 'trump_img', pollOptionText: 'trump', count: 0},
-                    // {img: 'kamala_img', pollOptionText: 'kamala', count: 0}
+                    {image: 'trump_img', pollOptionText: 'trump', count: 0},
+                    // {image: 'kamala_img', pollOptionText: 'kamala', count: 0}
                 ],
             });
 
@@ -103,7 +114,7 @@ describe('Poll Controller', () => {
         let pollId: string;
 
         beforeEach(async () => {
-            const poll = testPoll({ userId });
+            const poll = testPoll({ creatorId });
             await poll.save();
             pollId = poll.id;
         });
@@ -112,7 +123,7 @@ describe('Poll Controller', () => {
             const res = await request(app).put(`/api/v1/polls/${pollId}`).set('Authorization', `Bearer ${authToken}`).send({
                 title: 'Updated Poll',
                 description: 'This is an updated poll',
-                userId: userId,
+                creatorId: creatorId,
             });
 
             expect(res.status).toBe(200);
@@ -124,7 +135,7 @@ describe('Poll Controller', () => {
         let pollId: string;
 
         beforeEach(async () => {
-            const poll = testPoll({ userId });
+            const poll = testPoll({ creatorId });
             await poll.save();
             pollId = poll.id;
         });

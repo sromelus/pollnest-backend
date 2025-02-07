@@ -24,7 +24,7 @@ describe('Poll Model', () => {
         testUser({email: 'subscriber@example.com', role: 'subscriber'});
         testUser({email: 'user@example.com', role: 'user'});
 
-        const poll = testPoll({ userId: savedAdmin.id });
+        const poll = testPoll({ creatorId: savedAdmin.id });
         const savedPoll = await poll.save();
 
         expect(savedPoll._id).toBeDefined();
@@ -40,8 +40,8 @@ describe('Poll Model', () => {
         testUser({email: 'subscriber2@example.com', role: 'subscriber'});
         testUser({email: 'user2@example.com', role: 'user'});
 
-        const poll1 = testPoll({ userId: savedAdmin.id });
-        const poll2 = testPoll({ userId: savedAdmin.id });
+        const poll1 = testPoll({ creatorId: savedAdmin.id });
+        const poll2 = testPoll({ creatorId: savedAdmin.id });
 
         const savedPoll1 = await poll1.save();
         const savedPoll2 = await poll2.save();
@@ -67,7 +67,7 @@ describe('Poll Model', () => {
         } catch (error) {
             expect((error as any).errors.title.message).toBe('Path `title` is required.');
             expect((error as any).errors.description.message).toBe('Path `description` is required.');
-            expect((error as any).errors.userId.message).toBe('Path `userId` is required.');
+            expect((error as any).errors.creatorId.message).toBe('Path `creatorId` is required.');
             expect((error as any).errors.pollOptions.message).toBe('You should provide at least 2 poll options');
         }
     });

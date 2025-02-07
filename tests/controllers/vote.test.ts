@@ -28,7 +28,7 @@ describe('Vote Controller', () => {
     beforeEach(async () => {
         const user = testUser({ role: 'admin' });
         await user.save();
-        const pollObj = testPoll({ userId: user.id, pollOptions: [{img: 'trump_img', pollOptionText: 'trump', count: 0}, {img: 'kamala_img', pollOptionText: 'kamala', count: 0}] });
+        const pollObj = testPoll({ creatorId: user.id, pollOptions: [{img: 'trump_img', pollOptionText: 'trump', count: 0}, {img: 'kamala_img', pollOptionText: 'kamala', count: 0}] });
         await pollObj.save();
         poll = pollObj;
         voterId = user.id;

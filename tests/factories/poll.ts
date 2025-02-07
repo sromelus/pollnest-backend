@@ -3,7 +3,7 @@ import { Poll } from '../../src/models'
 export const testPoll = (
         options: {
             title?: string,
-            userId?: string,
+            creatorId?: string,
             description?: string,
             messages?: any[],
             pollOptions?: any[],
@@ -15,7 +15,7 @@ export const testPoll = (
     ) => {
         const defaults = {
             title: '2024 elections',
-            userId: '123',
+            creatorId: '123',
             description: 'Who do you think is going to win this election?',
             messages: [{content: 'i think trump is going to win', userId: '67a26660f5de61f22181db3d', createdAt: new Date()}, {content: 'no way, kamala is going to win', userId: '67a26660f5de61f22181db3d', createdAt: new Date()}],
             pollOptions: [{img: 'trump_img', pollOptionText: 'trump', count: 0}, {img: 'kamala_img', pollOptionText: 'kamala', count: 0}],

@@ -18,7 +18,7 @@ describe('Vote Model', () => {
     it('should create new vote successfully', async () => {
         const subscriber = testUser({firstName: 'Jane', lastName: 'Doe', email: 'jane@example.com', password: '12345678Aa!', role: 'subscriber'});
         await subscriber.save();
-        const poll = testPoll({ userId: subscriber.id });
+        const poll = testPoll({ creatorId: subscriber.id });
         const savedPoll = await poll.save();
 
         const vote = testVote(
@@ -52,7 +52,7 @@ describe('Vote Model', () => {
     it('should not create a vote when voterVoteOptionId is not valid', async () => {
         const subscriber = testUser({firstName: 'Jane', lastName: 'Doe', email: 'jane2@example.com', password: '12345678Aa!', role: 'subscriber'});
         await subscriber.save();
-        const poll = testPoll({ userId: subscriber.id });
+        const poll = testPoll({ creatorId: subscriber.id });
         const savedPoll = await poll.save();
 
         const vote = testVote({pollId: savedPoll.id, voterId: subscriber.id, voterVoteOptionId: '123'})

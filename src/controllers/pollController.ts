@@ -17,6 +17,27 @@ export default class PollController {
         }
     }
 
+    static async getPollOptions(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            const poll = await Poll.findById(id);
+
+            if (!poll) {
+                res.status(404).json({ error: 'Poll not found' });
+                return;
+            }
+
+            res.status(200).send({ voteTally: poll.pollOptions });
+        } catch (error) {
+            if ((error as Error).name === 'ValidationError') {
+                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
+                return;
+            }
+
+            res.status(500).json({ error: 'Failed to fetch poll options' });
+        }
+    }
+
     static async getPoll(req: Request, res: Response) {
         try {
             const { id } = req.params;
@@ -40,8 +61,8 @@ export default class PollController {
 
     static async createPoll(req: Request, res: Response) {
         try {
-            const { title, description, pollOptions, userId } = req.body;
-            const poll = await Poll.create({ title, description, pollOptions, userId });
+            const { title, description, pollOptions, creatorId } = req.body;
+            const poll = await Poll.create({ title, description, pollOptions, creatorId });
 
             res.status(200).json({ poll });
         } catch (error) {

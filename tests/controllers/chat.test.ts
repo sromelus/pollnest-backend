@@ -37,7 +37,7 @@ describe('Chat Controller', () => {
         let poll: any;
 
         beforeEach(async () => {
-            poll = testPoll({ userId });
+            poll = testPoll({ creatorId: userId });
             await poll.save();
             pollId = poll.id;
         });
@@ -55,7 +55,7 @@ describe('Chat Controller', () => {
         let poll: any;
 
         beforeEach(async () => {
-            poll = testPoll({ userId });
+            poll = testPoll({ creatorId: userId });
             await poll.save();
             pollId = poll.id;
         });
