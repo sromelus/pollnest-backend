@@ -24,12 +24,15 @@ app.use('/api/v1', routes)
 
 describe('Chat Controller', () => {
     let userId: string;
+    let userId2: string;
 
     beforeEach(async () => {
         const user = testUser();
+        const user2 = testUser();
         user.role = 'admin';
         await user.save();
         userId = user.id;
+        userId2 = user2.id;
     });
 
     describe('Poll Chat', () => {
@@ -46,7 +49,7 @@ describe('Chat Controller', () => {
             const res = await request(app).get(`/api/v1/polls/${pollId}/chat`);
 
             expect(res.status).toBe(200);
-            expect(res.body.messages).toHaveLength(poll.messages.length);
+            expect(res.body.data.messages).toHaveLength(poll.messages.length);
         });
     });
 
@@ -61,13 +64,23 @@ describe('Chat Controller', () => {
         });
 
         it('should add a new message to a poll chat', async () => {
-            const res = await request(app).post(`/api/v1/polls/${pollId}/chat/message`).send({
-                content: 'This is a test message',
-                userId: userId,
-            });
+            const messagePromises = [
+                request(app).post(`/api/v1/polls/${pollId}/chat/message`).send({
+                    content: 'This is a test message',
+                    userId: userId,
+                }),
+                request(app).post(`/api/v1/polls/${pollId}/chat/message`).send({
+                    content: 'This is a test message 2',
+                    userId: userId2,
+                })
+            ];
 
-            expect(res.status).toBe(200);
-            expect(res.body.messages).toHaveLength(poll.messages.length + 1);
+            const [messageRes, messageRes2] = await Promise.all(messagePromises);
+
+            expect(messageRes.status).toBe(201);
+            expect(messageRes2.status).toBe(201);
+            expect(messageRes.body.data.message.content).toBe('This is a test message');
+            expect(messageRes2.body.data.message.content).toBe('This is a test message 2');
         });
     });
 });

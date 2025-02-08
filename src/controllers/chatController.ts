@@ -3,19 +3,15 @@ import { Poll } from '../models';
 
 export default class ChatController {
     static async getChat(req: Request, res: Response) {
-        try {
-            const { id } = req.params;
-            const poll = await Poll.findById(id);
+        const { id } = req.params;
+        const poll = await Poll.findById(id);
 
-            if (!poll) {
-                res.status(404).json({ error: 'Poll not found' });
-                return;
-            }
-
-            res.status(200).json({ messages: poll.messages });
-        } catch (error) {
-            res.status(500).json({ error: 'Failed to fetch poll chat' });
+        if (!poll) {
+            res.status(404).json({ success: false, message: 'Poll not found' });
+            return;
         }
+
+        res.status(200).json({ success: true, message: 'Poll chat fetched successfully', data: { messages: poll.messages } });
     }
 
     static async createChatMessage(req: Request, res: Response) {
@@ -26,7 +22,7 @@ export default class ChatController {
             const poll = await Poll.findById(id);
 
             if (!poll) {
-                res.status(404).json({ error: 'Poll not found' });
+                res.status(404).json({ success: false, message: 'Poll not found' });
                 return;
             }
 
@@ -35,14 +31,14 @@ export default class ChatController {
             poll.messages.push(message);
             await poll.save();
 
-            res.status(200).json({ messages: poll.messages });
+            res.status(201).json({ success: true, message: 'Message added successfully', data: { message: poll.messages[poll.messages.length - 1] } });
         } catch (error) {
             if ((error as Error).name === 'ValidationError') {
-                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
+                res.status(400).send({success: false, message: 'Failed to add message to poll', errors: (error as Error).message});
                 return;
             }
 
-            res.status(500).json({ error: 'Failed to add message to poll' });
+            res.status(500).json({ success: false, message: 'Something went wrong', errors: (error as Error).message });
         }
     }
 }
