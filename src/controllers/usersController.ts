@@ -5,12 +5,9 @@ import { splitFullName } from '../utils';
 
 export default class UsersController {
     static getUsers: RequestHandler = async (req, res) => {
-        try {
-            const users = await User.find();
-            res.status(200).send({ users });
-        } catch (error: any) {
-            res.status(400).send({ message: 'User creation failed', error: error.message })
-        }
+        const users = await User.find();
+
+        res.status(200).send({ success: true, message: 'Users fetched successfully', data: { users } });
     }
 
     static getUser: RequestHandler = async (req, res) => {
@@ -18,11 +15,11 @@ export default class UsersController {
         const user = await User.findById(id);
 
         if (!user) {
-            res.status(404).send({ message: 'User not found' });
+            res.status(404).send({ success: false, message: 'User not found' });
             return;
         }
 
-        res.status(200).send({ user: { id: user.id, name: user.firstName + ' ' + user.lastName, email: user.email } });
+        res.status(200).send({ success: true, message: 'User fetched successfully', data: { user: { id: user.id, name: user.firstName + ' ' + user.lastName, email: user.email } } });
     }
 
     static createUser: RequestHandler = async (req, res) => {
@@ -38,14 +35,14 @@ export default class UsersController {
                 role
             });
 
-            res.status(200).send({ user: { id: user.id, name: user.firstName + ' ' + user.lastName, email: user.email, role: user.role } });
+            res.status(200).send({ success: true, message: 'User created successfully', data: { user: { id: user.id, name: user.firstName + ' ' + user.lastName, email: user.email, role: user.role } } });
         } catch (error: any) {
             if ((error as Error).name === 'ValidationError') {
-                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
+                res.status(400).send({success: false, message: 'Failed to create user', errors: (error as Error).message});
                 return;
             }
 
-            res.status(500).send({ message: 'User creation failed', error: error.message })
+            res.status(500).send({ success: false, message: 'Internal server error', errors: (error as Error).message })
         }
     }
 
@@ -57,7 +54,7 @@ export default class UsersController {
             const user = await User.findById(id);
 
             if (!user) {
-                res.status(404).send({ message: 'User not found' });
+                res.status(404).send({ success: false, message: 'User not found' });
                 return;
             }
 
@@ -75,20 +72,14 @@ export default class UsersController {
             // Save the updated user
             await user.save();
 
-            res.status(200).send({
-                user: {
-                    id: user.id,
-                    name: user.firstName + ' ' + user.lastName,
-                    email: user.email
-                }
-            });
+            res.status(200).send({ success: true, message: 'User updated successfully', data: { user: { id: user.id, name: user.firstName + ' ' + user.lastName, email: user.email } } });
         } catch (error: any) {
             if ((error as Error).name === 'ValidationError') {
-                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
+                res.status(400).send({success: false, message: 'Failed to update user', errors: (error as Error).message});
                 return;
             }
 
-            res.status(500).send({ message: 'User update failed', error: error.message })
+            res.status(500).send({ success: false, message: 'Internal server error', errors: (error as Error).message })
         }
     }
 
@@ -99,19 +90,19 @@ export default class UsersController {
             const user = await User.findById(id);
 
             if (!user) {
-                res.status(404).send({ message: 'User not found' });
+                res.status(404).send({ success: false, message: 'User not found' });
                 return;
             }
 
             await user.deleteOne();
-            res.status(200).send({ message: 'User deleted successfully' });
+            res.status(200).send({ success: true, message: 'User deleted successfully' });
         } catch (error: any) {
             if ((error as Error).name === 'ValidationError') {
-                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
+                res.status(400).send({success: false, message: 'Failed to delete user', errors: (error as Error).message});
                 return;
             }
 
-            res.status(500).send({ message: 'User deletion failed', error: error.message })
+            res.status(500).send({ success: false, message: 'Internal server error', errors: (error as Error).message })
         }
     }
 }

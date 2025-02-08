@@ -33,10 +33,9 @@ describe('User Registration', () => {
       });
 
       expect(res.status).toBe(200);
-      expect(res.body).toHaveProperty('user');
-      expect(res.body.user).toHaveProperty('name', 'John Doe');
-      expect(res.body.user).toHaveProperty('email', 'john@example.com');
-      expect(res.body.user).not.toHaveProperty('password');
+      expect(res.body.data.user).toHaveProperty('name', 'John Doe');
+      expect(res.body.data.user).toHaveProperty('email', 'john@example.com');
+      expect(res.body.data.user).not.toHaveProperty('password');
     });
 
     it('should trim and split name into first and last name', async () => {
@@ -47,7 +46,7 @@ describe('User Registration', () => {
       });
 
       expect(res.status).toBe(200);
-      expect(res.body.user).toHaveProperty('name', 'John Doe Dee');
+      expect(res.body.data.user).toHaveProperty('name', 'John Doe Dee');
     });
   });
 
@@ -142,7 +141,7 @@ describe('User Registration', () => {
         password: 'ValidPass123!'
       });
 
-      const token = loginRes.body.token;
+      const token = loginRes.body.data.token;
 
       const res = await request(app).post('/api/v1/registration/update').set('Authorization', `Bearer ${token}`).send({
         name: 'John Doe Updated',
@@ -169,7 +168,7 @@ describe('User Registration', () => {
         password: 'ValidPass123!'
       });
 
-      const token = loginRes.body.token;
+      const token = loginRes.body.data.token;
 
       const res = await request(app).delete('/api/v1/registration/delete').set('Authorization', `Bearer ${token}`)
 

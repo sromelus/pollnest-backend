@@ -37,7 +37,7 @@ describe('Poll Controller', () => {
             password: testUser().password
         });
 
-        authToken = loginRes.body.token;
+        authToken = loginRes.body.data.token;
     });
 
     describe('Get Polls', () => {
@@ -49,7 +49,7 @@ describe('Poll Controller', () => {
             const res = await request(app).get(`/api/v1/polls`);
 
             expect(res.status).toBe(200);
-            expect(res.body.polls).toHaveLength(2);
+            expect(res.body.data.polls).toHaveLength(2);
         });
     });
 
@@ -60,14 +60,15 @@ describe('Poll Controller', () => {
             const res = await request(app).get(`/api/v1/polls/${poll.id}`);
 
             expect(res.status).toBe(200);
-            expect(res.body.poll.title).toBe(poll.title);
+            expect(res.body.data.poll.title).toBe(poll.title);
         });
 
         it('should not get a poll with an invalid id', async () => {
             const res = await request(app).get(`/api/v1/polls/67a19b4c133a020b8171b213`);
 
             expect(res.status).toBe(404);
-            expect(res.body.error).toBe('Poll not found');
+            expect(res.body.success).toBe(false);
+            expect(res.body.message).toBe('Poll not found');
         });
     });
 
@@ -78,7 +79,7 @@ describe('Poll Controller', () => {
             const res = await request(app).get(`/api/v1/polls/${poll.id}/options`);
 
             expect(res.status).toBe(200);
-            expect(res.body.voteTally).toHaveLength(2);
+            expect(res.body.data.voteTallies).toHaveLength(2);
         });
     });
 
@@ -92,6 +93,8 @@ describe('Poll Controller', () => {
             });
 
             expect(res.status).toBe(200);
+            expect(res.body.success).toBe(true);
+            expect(res.body.message).toBe('Poll created successfully');
         });
 
         it('should not create a poll when missing required fields', async () => {
@@ -107,6 +110,7 @@ describe('Poll Controller', () => {
             });
 
             expect(res.status).toBe(400);
+            expect(res.body.success).toBe(false);
         });
     });
 
@@ -127,7 +131,7 @@ describe('Poll Controller', () => {
             });
 
             expect(res.status).toBe(200);
-            expect(res.body.poll.title).toBe('Updated Poll');
+            expect(res.body.data.poll.title).toBe('Updated Poll');
         });
     });
 
@@ -144,6 +148,7 @@ describe('Poll Controller', () => {
             const res = await request(app).delete(`/api/v1/polls/${pollId}`).set('Authorization', `Bearer ${authToken}`);
 
             expect(res.status).toBe(200);
+            expect(res.body.success).toBe(true);
             expect(res.body.message).toBe('Poll deleted successfully');
         });
     });

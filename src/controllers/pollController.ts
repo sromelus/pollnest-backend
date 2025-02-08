@@ -1,62 +1,52 @@
 import { Request, Response } from 'express';
 import { Poll } from '../models';
 
+type PollOptionType = {
+    image?: string;
+    pollOptionText: string;
+    count: number;
+    _id: string;
+}
+
+type PollType = {
+    pollOptions: PollOptionType[];
+}
+
 export default class PollController {
     static async getPolls(req: Request, res: Response) {
-        try {
-            const polls = await Poll.find();
+        const polls = await Poll.find();
 
-            res.status(200).json({ polls });
-        } catch (error) {
-            if ((error as Error).name === 'ValidationError') {
-                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
-                return;
-            }
-
-            res.status(500).json({ error: 'Failed to fetch polls' });
-        }
+        res.status(200).json({ success: true, message: 'Polls fetched successfully', data: { polls } });
     }
 
     static async getPollOptions(req: Request, res: Response) {
-        try {
-            const { id } = req.params;
-            const poll = await Poll.findById(id);
+        const { id } = req.params;
+        const poll = await Poll.findById(id) as PollType | null;
 
-            if (!poll) {
-                res.status(404).json({ error: 'Poll not found' });
-                return;
-            }
-
-            res.status(200).send({ voteTally: poll.pollOptions });
-        } catch (error) {
-            if ((error as Error).name === 'ValidationError') {
-                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
-                return;
-            }
-
-            res.status(500).json({ error: 'Failed to fetch poll options' });
+        if (!poll) {
+            res.status(404).json({ success: false, message: 'Poll not found' });
+            return;
         }
+
+        const pollOptionsWithoutImage = poll.pollOptions.map(({ image, ...rest }) => rest);
+
+        res.status(200).json({
+            success: true,
+            message: 'Poll options fetched successfully',
+            data: { voteTallies: pollOptionsWithoutImage }
+        });
     }
 
     static async getPoll(req: Request, res: Response) {
-        try {
-            const { id } = req.params;
-            const poll = await Poll.findById(id);
+        const { id } = req.params;
+        const poll = await Poll.findById(id)
 
-            if (!poll) {
-                res.status(404).json({ error: 'Poll not found' });
-                return;
-            }
-
-            res.status(200).json({ poll });
-        } catch (error) {
-            if ((error as Error).name === 'ValidationError') {
-                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
-                return;
-            }
-
-            res.status(500).json({ error: 'Failed to fetch poll' });
+        if (!poll) {
+            res.status(404).json({ success: false, message: 'Poll not found' });
+            return;
         }
+
+        res.status(200).json({ success: true, message: 'Poll fetched successfully', data: { poll } });
     }
 
     static async createPoll(req: Request, res: Response) {
@@ -64,14 +54,14 @@ export default class PollController {
             const { title, description, pollOptions, creatorId } = req.body;
             const poll = await Poll.create({ title, description, pollOptions, creatorId });
 
-            res.status(200).json({ poll });
+            res.status(200).json({ success: true, message: 'Poll created successfully', data: { poll } });
         } catch (error) {
             if ((error as Error).name === 'ValidationError') {
-                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
+                res.status(400).send({success: false, message: 'Failed to create poll', errors: (error as Error).message});
                 return;
             }
 
-            res.status(400).json({ error: error });
+            res.status(500).json({ success: false, message: 'Internal server error', errors: (error as Error).message });
         }
     }
 
@@ -82,7 +72,7 @@ export default class PollController {
             const poll = await Poll.findById(id);
 
             if (!poll) {
-                res.status(404).json({ error: 'Poll not found' });
+                res.status(404).json({success: false, message: 'Poll not found' });
                 return;
             }
 
@@ -92,14 +82,14 @@ export default class PollController {
 
             await poll.save();
 
-            res.status(200).json({ poll });
+            res.status(200).json({ success: true, message: 'Poll updated successfully', data: { poll } });
         } catch (error) {
             if ((error as Error).name === 'ValidationError') {
-                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
+                res.status(400).send({success: false, message: 'Failed to update poll', errors: (error as Error).message});
                 return;
             }
 
-            res.status(500).json({ error: 'Failed to update poll' });
+            res.status(500).json({success: false, message: 'Internal server error', errors: (error as Error).message });
         }
     }
 
@@ -109,19 +99,20 @@ export default class PollController {
             const poll = await Poll.findById(id);
 
             if (!poll) {
-                res.status(404).json({ error: 'Poll not found' });
+                res.status(404).json({ success: false, message: 'Poll not found' });
                 return;
             }
 
-            await poll.deleteOne();
-            res.status(200).json({ message: 'Poll deleted successfully' });
+            poll.active = false;
+            await poll.save();
+            res.status(200).json({ success: true, message: 'Poll deleted successfully' });
         } catch (error) {
             if ((error as Error).name === 'ValidationError') {
                 res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
                 return;
             }
 
-            res.status(500).json({ error: 'Failed to delete poll' });
+            res.status(500).json({success: false, message: 'Internal server error', errors: (error as Error).message });
         }
     }
 }

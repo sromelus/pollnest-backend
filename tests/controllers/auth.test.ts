@@ -36,7 +36,7 @@ describe('Auth Controller', () => {
             });
 
             expect(res.status).toBe(200);
-            expect(res.body).toHaveProperty('token');
+            expect(res.body.data).toHaveProperty('token');
         });
 
         it('should not login user with invalid credentials', async () => {
@@ -57,7 +57,7 @@ describe('Auth Controller', () => {
                 password: 'ValidPass123!'
             });
 
-            const token = loginRes.body.token;
+            const { token } = loginRes.body.data;
 
             const logoutRes = await request(app).post('/api/v1/auth/logout').set('Authorization', `Bearer ${token}`);
 

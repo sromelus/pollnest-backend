@@ -40,7 +40,7 @@ describe('User Management', () => {
         });
 
         userId = user.id;
-        authToken = loginRes.body.token;
+        authToken = loginRes.body.data.token;
     });
 
     describe('Get User', () => {
@@ -50,8 +50,8 @@ describe('User Management', () => {
                 .set('Authorization', `Bearer ${authToken}`);
 
             expect(res.status).toBe(200);
-            expect(res.body.user).toHaveProperty('name', 'John Doe');
-            expect(res.body.user).toHaveProperty('email', 'john@example.com');
+            expect(res.body.data.user).toHaveProperty('name', 'John Doe');
+            expect(res.body.data.user).toHaveProperty('email', 'john@example.com');
         });
     });
 
@@ -62,8 +62,8 @@ describe('User Management', () => {
                 .set('Authorization', `Bearer ${authToken}`);
 
             expect(res.status).toBe(200);
-            expect(res.body.users).toBeInstanceOf(Array);
-            expect(res.body.users.length).toBeGreaterThan(0);
+            expect(res.body.data.users).toBeInstanceOf(Array);
+            expect(res.body.data.users.length).toBeGreaterThan(0);
         });
     });
 
@@ -79,8 +79,8 @@ describe('User Management', () => {
                 });
 
             expect(res.status).toBe(200);
-            expect(res.body.user).toHaveProperty('name', 'Jane Doe');
-            expect(res.body.user).toHaveProperty('email', 'jane@example.com');
+            expect(res.body.data.user).toHaveProperty('name', 'Jane Doe');
+            expect(res.body.data.user).toHaveProperty('email', 'jane@example.com');
         });
 
         it('should create a new user with role successfully', async () => {
@@ -95,9 +95,9 @@ describe('User Management', () => {
                 });
 
             expect(res.status).toBe(200);
-            expect(res.body.user).toHaveProperty('name', 'Jane Doe');
-            expect(res.body.user).toHaveProperty('email', 'jane@example.com');
-            expect(res.body.user).toHaveProperty('role', 'admin');
+            expect(res.body.data.user).toHaveProperty('name', 'Jane Doe');
+            expect(res.body.data.user).toHaveProperty('email', 'jane@example.com');
+            expect(res.body.data.user).toHaveProperty('role', 'admin');
         });
     });
 
@@ -112,8 +112,8 @@ describe('User Management', () => {
                 });
 
             expect(res.status).toBe(200);
-            expect(res.body.user).toHaveProperty('name', 'John Updated');
-            expect(res.body.user).toHaveProperty('email', 'john.updated@example.com');
+            expect(res.body.data.user).toHaveProperty('name', 'John Updated');
+            expect(res.body.data.user).toHaveProperty('email', 'john.updated@example.com');
         });
 
         it('should fail to update with invalid email', async () => {

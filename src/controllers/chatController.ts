@@ -38,7 +38,7 @@ export default class ChatController {
                 return;
             }
 
-            res.status(500).json({ success: false, message: 'Something went wrong', errors: (error as Error).message });
+            res.status(500).json({ success: false, message: 'Internal server error', errors: (error as Error).message });
         }
     }
 }

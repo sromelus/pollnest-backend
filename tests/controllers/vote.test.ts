@@ -2,7 +2,7 @@ import express from "express";
 import request from 'supertest';
 import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/dbTestConfig';
 import routes from "../../src/routes";
-import { testVote, testPoll, testUser } from "../factories";
+import { testPoll, testUser } from "../factories";
 
 beforeAll(async () => {
     await dbConnect();
@@ -28,7 +28,7 @@ describe('Vote Controller', () => {
     beforeEach(async () => {
         const user = testUser({ role: 'admin' });
         await user.save();
-        const pollObj = testPoll({ creatorId: user.id, pollOptions: [{img: 'trump_img', pollOptionText: 'trump', count: 0}, {img: 'kamala_img', pollOptionText: 'kamala', count: 0}] });
+        const pollObj = testPoll({ creatorId: user.id, pollOptions: [{image: 'trump_img', pollOptionText: 'trump', count: 0}, {image: 'kamala_img', pollOptionText: 'kamala', count: 0}] });
         await pollObj.save();
         poll = pollObj;
         voterId = user.id;
@@ -38,7 +38,7 @@ describe('Vote Controller', () => {
             password: testUser().password
         });
 
-        authToken = loginRes.body.token;
+        authToken = loginRes.body.data.token;
     });
 
     it('should create a vote', async () => {
@@ -59,12 +59,11 @@ describe('Vote Controller', () => {
             voterCity: 'Natick'
         })
 
-        const kamalaOptionTally = res.body.voteTally.find((option: any) => option._id == kamalaVote._id);
+        const { optionVoteTally } = res.body.data;
 
         expect(res.status).toBe(201);
-        expect(res.body).toHaveProperty('voteTally');
-        expect(JSON.stringify(res.body.voteTally)).not.toEqual(JSON.stringify(poll.pollOptions));
-        expect(kamalaOptionTally.count).toBe(kamalaVote.count + 1);
+        expect(res.body.data).toHaveProperty('optionVoteTally');
+        expect(optionVoteTally.count).toBe(kamalaVote.count + 1);
     })
 
 

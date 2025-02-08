@@ -4,7 +4,8 @@ import { Document } from 'mongoose';
 import '../loadEnvironmentVariables';
 import { envConfig } from '../config/environment';
 
-interface PollOption {
+type PollOption = {
+    image?: string;
     pollOptionText: string;
     count: number;
     _id: string;
@@ -70,15 +71,25 @@ export default class VoteController {
 
             await poll.save();
 
-            res.status(201).send({ success: true, message: 'Vote created successfully', voteTally: poll.pollOptions });
+            const responseOption = {
+                pollOptionText: pollOption.pollOptionText,
+                count: pollOption.count,
+                _id: pollOption._id
+            };
+
+            res.status(201).send({
+                success: true,
+                message: 'Vote created successfully',
+                data: { optionVoteTally: responseOption }
+            });
         } catch (error) {
             if ((error as Error).name === 'ValidationError') {
-                res.status(400).send({success: false, message: 'Validation error', errors: (error as Error).message});
+                res.status(400).send({success: false, message: 'Failed to create vote', errors: (error as Error).message});
                 return;
             }
 
             console.error('Error creating vote:', error);
-            res.status(500).send({ success: false, message: 'Internal server error' });
+            res.status(500).send({ success: false, message: 'Internal server error', errors: (error as Error).message });
         }
     }
 }
