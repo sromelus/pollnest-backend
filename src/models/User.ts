@@ -79,9 +79,6 @@ const UserSchema: Schema = new Schema({
     }
 );
 
-// Ensure index exists
-UserSchema.index({ email: 1 }, { unique: true });
-
 // Add pre-save middleware to hash password
 UserSchema.pre('save', async function(next) {
     if (!this.isModified('password')) return next();
@@ -93,6 +90,10 @@ UserSchema.pre('save', async function(next) {
     } catch (error) {
         next(error as Error);
     }
+});
+
+UserSchema.virtual('name').get(function() {
+    return `${this.firstName} ${this.lastName}`;
 });
 
 // Add method to compare passwords

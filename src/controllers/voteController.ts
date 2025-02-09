@@ -1,8 +1,9 @@
-import { Request, Response } from 'express';
+import { Request, RequestHandler } from 'express';
 import { Poll, Vote } from '../models';
 import { Document } from 'mongoose';
 import '../loadEnvironmentVariables';
 import { envConfig } from '../config/environment';
+import { tryCatch } from '../utils';
 
 type PollOption = {
     image?: string;
@@ -43,57 +44,46 @@ const getVoterLocationInfo = (req: Request): VoterLocationInfo => {
 };
 
 export default class VoteController {
-    static async createVote(req: Request, res: Response) {
-        try {
-            const { id } = req.params;
+    static createVote: RequestHandler = tryCatch(async (req, res) => {
+        const { id } = req.params;
 
-            const poll = await Poll.findById(id) as IPoll | null;
+        const poll = await Poll.findById(id) as IPoll | null;
 
-            if (!poll) {
-                res.status(404).send({ success: false, message: 'Poll not found for this vote' });
-                return;
-            }
-
-            const voterLocationInfo = getVoterLocationInfo(req);
-
-            await Vote.create({ pollId: id, ...req.body, ...voterLocationInfo });
-
-            const { voterVoteOptionId } = req.body;
-
-            const pollOption = poll.pollOptions.find((option: PollOption) => option._id == voterVoteOptionId);
-
-            if (!pollOption) {
-                res.status(404).send({ success: false, message: 'Option not found for this vote' });
-                return;
-            }
-
-            pollOption.count += 1;
-
-            await poll.save();
-
-            const responseOption = {
-                pollOptionText: pollOption.pollOptionText,
-                count: pollOption.count,
-                _id: pollOption._id
-            };
-
-            res.status(201).send({
-                success: true,
-                message: 'Vote created successfully',
-                data: { optionVoteTally: responseOption }
-            });
-        } catch (error) {
-            if ((error as Error).name === 'ValidationError') {
-                res.status(400).send({success: false, message: 'Failed to create vote', errors: (error as Error).message});
-                return;
-            }
-
-            console.error('Error creating vote:', error);
-            res.status(500).send({ success: false, message: 'Internal server error', errors: (error as Error).message });
+        if (!poll) {
+            res.status(404).send({ success: false, message: 'Poll not found for this vote' });
+            return;
         }
-    }
-}
 
+        const voterLocationInfo = getVoterLocationInfo(req);
+
+        await Vote.create({ pollId: id, ...req.body, ...voterLocationInfo });
+
+        const { voterVoteOptionId } = req.body;
+
+        const pollOption = poll.pollOptions.find((option: PollOption) => option._id == voterVoteOptionId);
+
+        if (!pollOption) {
+            res.status(404).send({ success: false, message: 'Option not found for this vote' });
+            return;
+        }
+
+        pollOption.count += 1;
+
+        await poll.save();
+
+        const responseOption = {
+            pollOptionText: pollOption.pollOptionText,
+            count: pollOption.count,
+            _id: pollOption._id
+        };
+
+        res.status(201).send({
+            success: true,
+            message: 'Vote created successfully',
+            data: { optionVoteTally: responseOption }
+        });
+    });
+}
 
 // import { v4 as uuidv4 } from 'uuid';
 // import { profanity } from '@2toad/profanity';
