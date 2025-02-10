@@ -1,20 +1,12 @@
-import { User } from '../../src/models'
+import { User, UserRole, IUser } from '../../src/models'
 
-export const testUser = (
-        options: {
-            firstName?: string,
-            lastName?: string,
-            email?: string,
-            password?: string,
-            role?: string
-        } = {}
-    ) => {
+export const testUser = (options: Partial<IUser>): IUser => {
         const defaults = {
             firstName: 'Test',
             lastName: 'User',
             email: 'test@example.com',
             password: 'ValidPass123!',
-            role: 'user'
+            role: UserRole.User
         }
 
         const mergedOptions = { ...defaults, ...options };

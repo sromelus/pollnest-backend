@@ -45,9 +45,9 @@ const getVoterLocationInfo = (req: Request): VoterLocationInfo => {
 
 export default class VoteController {
     static createVote: RequestHandler = tryCatch(async (req, res) => {
-        const { id } = req.params;
+        const { pollId } = req.params;
 
-        const poll = await Poll.findById(id) as IPoll | null;
+        const poll = await Poll.findById(pollId) as IPoll | null;
 
         if (!poll) {
             res.status(404).send({ success: false, message: 'Poll not found for this vote' });
@@ -56,11 +56,11 @@ export default class VoteController {
 
         const voterLocationInfo = getVoterLocationInfo(req);
 
-        await Vote.create({ pollId: id, ...req.body, ...voterLocationInfo });
+        await Vote.create({ pollId: pollId, ...req.body, ...voterLocationInfo });
 
-        const { voterVoteOptionId } = req.body;
+        const { voteOptionId } = req.body;
 
-        const pollOption = poll.pollOptions.find((option: PollOption) => option._id == voterVoteOptionId);
+        const pollOption = poll.pollOptions.find((option: PollOption) => option._id == voteOptionId);
 
         if (!pollOption) {
             res.status(404).send({ success: false, message: 'Option not found for this vote' });

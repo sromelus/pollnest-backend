@@ -3,6 +3,8 @@ import request from 'supertest';
 import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/dbTestConfig';
 import { testPoll, testUser } from "../factories";
 import routes from '../../src/routes';
+import { UserRole } from '../../src/models/User';
+import { Types } from 'mongoose';
 
 
 beforeAll(async () => {
@@ -23,13 +25,13 @@ app.use('/api/v1', routes)
 
 
 describe('Chat Controller', () => {
-    let userId: string;
-    let userId2: string;
+    let userId: Types.ObjectId;
+    let userId2: Types.ObjectId;
 
     beforeEach(async () => {
-        const user = testUser();
-        const user2 = testUser();
-        user.role = 'admin';
+        const user = testUser({});
+        const user2 = testUser({});
+        user.role = UserRole.Admin;
         await user.save();
         userId = user.id;
         userId2 = user2.id;

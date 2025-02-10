@@ -1,17 +1,6 @@
 import { RequestHandler } from 'express';
-import { Poll } from '../models';
+import { Poll, IPoll } from '../models';
 import { tryCatch } from '../utils';
-
-type PollOptionType = {
-    image?: string;
-    pollOptionText: string;
-    count: number;
-    _id: string;
-}
-
-type PollType = {
-    pollOptions: PollOptionType[];
-}
 
 export default class PollController {
     static getPolls: RequestHandler = tryCatch(async (req, res) => {
@@ -21,8 +10,8 @@ export default class PollController {
     });
 
     static getPollOptions: RequestHandler = tryCatch(async (req, res) => {
-        const { id } = req.params;
-        const poll = await Poll.findById(id) as PollType | null;
+        const { pollId } = req.params;
+        const poll = await Poll.findById(pollId) as IPoll | null;
 
         if (!poll) {
             res.status(404).json({ success: false, message: 'Poll not found' });
@@ -39,8 +28,8 @@ export default class PollController {
     });
 
     static getPoll: RequestHandler = tryCatch(async (req, res) => {
-        const { id } = req.params;
-        const poll = await Poll.findById(id)
+        const { pollId } = req.params;
+        const poll = await Poll.findById(pollId)
 
         if (!poll) {
             res.status(404).json({ success: false, message: 'Poll not found' });
@@ -54,22 +43,21 @@ export default class PollController {
         const { title, description, pollOptions, creatorId } = req.body;
         const poll = await Poll.create({ title, description, pollOptions, creatorId });
 
-        res.status(200).json({ success: true, message: 'Poll created successfully', data: { poll } });
+        res.status(201).json({ success: true, message: 'Poll created successfully', data: { poll } });
     });
 
     static updatePoll: RequestHandler = tryCatch(async (req, res) => {
-        const { id } = req.params;
-        const { title, description, userId } = req.body;
-            const poll = await Poll.findById(id);
+        const { pollId } = req.params;
+        const { title, description } = req.body;
+        const poll = await Poll.findById(pollId);
 
-            if (!poll) {
-                res.status(404).json({success: false, message: 'Poll not found' });
-                return;
-            }
+        if (!poll) {
+            res.status(404).json({success: false, message: 'Poll not found' });
+            return;
+        }
 
-            if (title) poll.title = title;
-            if (description) poll.description = description;
-            if (userId) poll.userId = userId;
+        if (title) poll.title = title;
+        if (description) poll.description = description;
 
         await poll.save();
 
@@ -77,8 +65,8 @@ export default class PollController {
     });
 
     static deletePoll: RequestHandler = tryCatch(async (req, res) => {
-        const { id } = req.params;
-        const poll = await Poll.findById(id);
+        const { pollId } = req.params;
+        const poll = await Poll.findById(pollId);
 
         if (!poll) {
             res.status(404).json({ success: false, message: 'Poll not found' });

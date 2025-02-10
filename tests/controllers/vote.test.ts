@@ -3,6 +3,7 @@ import request from 'supertest';
 import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/dbTestConfig';
 import routes from "../../src/routes";
 import { testPoll, testUser } from "../factories";
+import { UserRole } from "../../src/models";
 
 beforeAll(async () => {
     await dbConnect();
@@ -26,7 +27,7 @@ describe('Vote Controller', () => {
     let voterId: string;
 
     beforeEach(async () => {
-        const user = testUser({ role: 'admin' });
+        const user = testUser({ role: UserRole.Admin });
         await user.save();
         const pollObj = testPoll({ creatorId: user.id, pollOptions: [{image: 'trump_img', pollOptionText: 'trump', count: 0}, {image: 'kamala_img', pollOptionText: 'kamala', count: 0}] });
         await pollObj.save();
@@ -34,8 +35,8 @@ describe('Vote Controller', () => {
         voterId = user.id;
 
         const loginRes = await request(app).post('/api/v1/auth/login').send({
-            email: testUser().email,
-            password: testUser().password
+            email: testUser({}).email,
+            password: testUser({}).password
         });
 
         authToken = loginRes.body.data.token;
@@ -52,7 +53,7 @@ describe('Vote Controller', () => {
             voterEthnicity: 'black',
             voterGender: 'male',
             voteOptionText: 'kamala',
-            voterVoteOptionId: kamalaVote._id,
+            voteOptionId: kamalaVote._id,
             voterIp: '123',
             voterCountry: 'US',
             voterRegion: 'MA',
@@ -62,19 +63,20 @@ describe('Vote Controller', () => {
         const { optionVoteTally } = res.body.data;
 
         expect(res.status).toBe(201);
+        expect(res.body.message).toBe('Vote created successfully');
         expect(res.body.data).toHaveProperty('optionVoteTally');
         expect(optionVoteTally.count).toBe(kamalaVote.count + 1);
     })
 
 
-    it('should not create a vote if the voterVoteOptionId is not found', async () => {
+    it('should not create a vote if the voteOptionId is not found', async () => {
         const res = await request(app).post(`/api/v1/polls/${poll.id}/votes`).set('Authorization', `Bearer ${authToken}`).send({
             pollId: poll.id,
             voterId,
             voterEthnicity: 'black',
             voterGender: 'male',
             voteOptionText: 'kamala',
-            voterVoteOptionId: '67a2fc834e011d27320e4e79',
+            voteOptionId: '67a2fc834e011d27320e4e79',
             voterIp: '123',
             voterCountry: 'US',
             voterRegion: 'MA',
@@ -82,6 +84,6 @@ describe('Vote Controller', () => {
         })
 
         expect(res.status).toBe(400);
-        expect(res.body.errors).toBe('Vote validation failed: voterVoteOptionId: Vote option must be one of the valid options from the poll.');
+        expect(res.body.errors).toBe('Vote validation failed: voteOptionId: Vote option must be one of the valid options from the poll.');
     })
 })

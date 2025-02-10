@@ -1,4 +1,5 @@
 import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/dbTestConfig';
+import { UserRole } from '../../src/models';
 import { testUser } from '../factories'
 
 
@@ -17,7 +18,7 @@ afterAll(async () => {
 describe('User Model', () => {
     //Happy Path
     it('should create a new user successfully', async () => {
-        const admin = testUser({firstName: 'Jane', lastName: 'Doe', email: 'jane@example.com', password: '12345678Aa!', role: 'admin'});
+        const admin = testUser({firstName: 'Jane', lastName: 'Doe', email: 'jane@example.com', password: '12345678Aa!', role: UserRole.Admin});
         const savedAdmin = await admin.save();
 
         expect(savedAdmin._id).toBeDefined();
@@ -28,7 +29,7 @@ describe('User Model', () => {
     });
 
     it('should have default role of "user"', async () => {
-        const user = testUser({firstName: 'Jane', lastName: 'Doe', email: 'jane1@example.com', password: '12345678Aa!', role: 'user'});
+        const user = testUser({firstName: 'Jane', lastName: 'Doe', email: 'jane1@example.com', password: '12345678Aa!', role: UserRole.User});
         const savedUser = await user.save();
 
         expect(savedUser.role).toEqual('user');
@@ -36,7 +37,7 @@ describe('User Model', () => {
 
     //Sad Path
     it('should not create user with bad email', async () => {
-        const userWithBadEmail = testUser({firstName: 'Jane', lastName: 'Doe', email: 'jane2@.com', password: '12345678Aa!', role: 'user'});
+        const userWithBadEmail = testUser({firstName: 'Jane', lastName: 'Doe', email: 'jane2@.com', password: '12345678Aa!', role: UserRole.User});
 
         try {
             await userWithBadEmail.save();

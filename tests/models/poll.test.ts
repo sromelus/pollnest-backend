@@ -1,7 +1,6 @@
 import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/dbTestConfig';
-import { Poll } from '../../src/models';
+import { Poll, UserRole } from '../../src/models';
 import { testUser, testPoll } from '../factories'
-
 
 beforeAll(async () => {
     await dbConnect();
@@ -19,10 +18,10 @@ afterAll(async () => {
 describe('Poll Model', () => {
     //Happy Path
     it('should create a new poll successfully', async () => {
-        const savedAdmin = testUser({email: 'admin@example.com', role: 'admin'});
+        const savedAdmin = testUser({email: 'admin@example.com', role: UserRole.Admin});
         await savedAdmin.save();
-        testUser({email: 'subscriber@example.com', role: 'subscriber'});
-        testUser({email: 'user@example.com', role: 'user'});
+        testUser({email: 'subscriber@example.com', role: UserRole.Subscriber});
+        testUser({email: 'user@example.com', role: UserRole.User});
 
         const poll = testPoll({ creatorId: savedAdmin.id });
         const savedPoll = await poll.save();
@@ -35,10 +34,10 @@ describe('Poll Model', () => {
     });
 
     it('should create 2 new polls successfully', async () => {
-        const savedAdmin = testUser({email: 'admin2@example.com', role: 'admin'});
+        const savedAdmin = testUser({email: 'admin2@example.com', role: UserRole.Admin});
         await savedAdmin.save();
-        testUser({email: 'subscriber2@example.com', role: 'subscriber'});
-        testUser({email: 'user2@example.com', role: 'user'});
+        testUser({email: 'subscriber2@example.com', role: UserRole.Subscriber});
+        testUser({email: 'user2@example.com', role: UserRole.User});
 
         const poll1 = testPoll({ creatorId: savedAdmin.id });
         const poll2 = testPoll({ creatorId: savedAdmin.id });
@@ -54,9 +53,9 @@ describe('Poll Model', () => {
 
     //Sad Path
     it('should not create a new poll with missing attributes', async () => {
-        const savedAdmin = testUser({email: 'admin3@example.com', role: 'admin'});
-        const savedUser = testUser({email: 'user3@example.com', role: 'user'});
-        testUser({email: 'subscriber3@example.com', role: 'subscriber'});
+        const savedAdmin = testUser({email: 'admin3@example.com', role: UserRole.Admin});
+        const savedUser = testUser({email: 'user3@example.com', role: UserRole.User});
+        testUser({email: 'subscriber3@example.com', role: UserRole.Subscriber});
 
         const messages = [{userId: savedUser._id, content: 'hello world', createdAt: Date.now()}];
         const poll = new Poll({ messages });

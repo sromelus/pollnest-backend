@@ -17,7 +17,7 @@ export default class RegistrationsController {
         res.status(200).send({
             success: true,
             message: 'User created successfully',
-            data: { user: { id: user.id, name: user.firstName + ' ' + user.lastName, email: user.email } }
+            data: { user: { id: user.id, name: user.name, email: user.email } }
         });
     });
 
@@ -43,7 +43,7 @@ export default class RegistrationsController {
         res.status(200).send({
             success: true,
             message: 'User updated successfully',
-            data: { user: { id: user.id, name: user.firstName + ' ' + user.lastName, email: user.email } } 
+            data: { user: { id: user.id, name: user.name, email: user.email } }
         });
     });
 

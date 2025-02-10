@@ -27,9 +27,9 @@ const messageLimiter = rateLimit({
 // router.get('/', getVotesLimiter, registrationController.signUp);
 
 router.get('/', auth(), UsersController.getUsers);
-router.get('/:id', auth(), UsersController.getUser);
+router.get('/:userId', auth(), UsersController.getUser);
 router.post('/', auth(), validateUser, UsersController.createUser);
-router.put('/:id', auth(), validateUpdateUser, UsersController.updateUser);
-router.delete('/:id', auth(), UsersController.deleteUser);
+router.put('/:userId', auth(), validateUpdateUser, UsersController.updateUser);
+router.delete('/:userId', auth(), UsersController.deleteUser);
 
 export default router;

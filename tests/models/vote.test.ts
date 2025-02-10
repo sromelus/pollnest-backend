@@ -1,5 +1,7 @@
 import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/dbTestConfig';
 import { testUser, testPoll, testVote } from '../factories';
+import { UserRole } from '../../src/models';
+import { Types } from 'mongoose';
 
 beforeAll(async () => {
     await dbConnect();
@@ -16,28 +18,30 @@ afterAll(async () => {
 describe('Vote Model', () => {
     //Happy Path
     it('should create new vote successfully', async () => {
-        const subscriber = testUser({firstName: 'Jane', lastName: 'Doe', email: 'jane@example.com', password: '12345678Aa!', role: 'subscriber'});
+        const subscriber = testUser({firstName: 'Jane', lastName: 'Doe', email: 'jane@example.com', password: '12345678Aa!', role: UserRole.Subscriber});
         await subscriber.save();
         const poll = testPoll({ creatorId: subscriber.id });
         const savedPoll = await poll.save();
+
 
         const vote = testVote(
             {
                 pollId: savedPoll.id,
                 voterId: subscriber.id,
                 voteOptionText: 'trump',
-                voterVoteOptionId: (savedPoll.pollOptions[0] as any)._id,
+                voteOptionId: (savedPoll.pollOptions[0] as any)._id,
                 voterEthnicity: 'white',
                 voterGender: 'male'
             })
+
         const savedVote = await vote.save();
 
         expect(savedVote._id).toBeDefined();
     });
 
     //Sad Path
-    it('should not create a vote when pollId or voterVoteOptionId is missing', async () => {
-        const vote = testVote({pollId: null, voterId: null, voteOptionText: '', voterVoteOptionId: ''})
+    it('should not create a vote when pollId or voteOptionId is missing', async () => {
+        const vote = testVote({pollId: undefined, voterId: undefined, voteOptionText: '', voteOptionId: undefined})
 
         try {
             await vote.save();
@@ -49,19 +53,19 @@ describe('Vote Model', () => {
     });
 
     // Sad Path
-    it('should not create a vote when voterVoteOptionId is not valid', async () => {
-        const subscriber = testUser({firstName: 'Jane', lastName: 'Doe', email: 'jane2@example.com', password: '12345678Aa!', role: 'subscriber'});
+    it('should not create a vote when voteOptionId is not valid', async () => {
+        const subscriber = testUser({firstName: 'Jane', lastName: 'Doe', email: 'jane2@example.com', password: '12345678Aa!', role: UserRole.Subscriber});
         await subscriber.save();
         const poll = testPoll({ creatorId: subscriber.id });
         const savedPoll = await poll.save();
 
-        const vote = testVote({pollId: savedPoll.id, voterId: subscriber.id, voterVoteOptionId: '123'})
+        const vote = testVote({pollId: savedPoll.id, voterId: subscriber.id, voteOptionId: '67a26660f5de61f22181db3d'})
 
         try {
             await vote.save();
             fail('Should not succeed in creating vote');
         } catch(error) {
-            expect((error as any).errors.voterVoteOptionId.message).toBe('Vote option must be one of the valid options from the poll.');
+            expect((error as any).errors.voteOptionId.message).toBe('Vote option must be one of the valid options from the poll.');
         }
     });
 });

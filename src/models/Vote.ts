@@ -1,17 +1,21 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
-export interface Vote extends Document {
-  pollId: string,
+export interface IVote extends Document {
+  pollId: Types.ObjectId,
   voteOptionText: string;
-  voterId: string;
+  voteOptionId: string,
+  voterId: Types.ObjectId;
+  voterIp: string,
+  voterCountry: string,
+  voterRegion: string,
+  voterCity: string,
   voterEthnicity: string;
   voterGender: string;
-  createdAt: Date;
 }
 
-const VoteSchema: Schema = new Schema({
+const VoteSchema = new Schema<IVote>({
     pollId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: 'Poll',
       validate: {
         validator: async function(this: any, pollId: string) {
@@ -27,44 +31,44 @@ const VoteSchema: Schema = new Schema({
       type: String,
       required: true,
     },
-    voterVoteOptionId: {
-      type: String,
+    voteOptionId: {
+      type: Schema.Types.String,
       required: true,
       validate: {
-        validator: async function(this: any, voterVoteOptionId: string) {
+        validator: async function(this: IVote, voteOptionId: string) {
           const Poll = mongoose.model('Poll');
           const poll = await Poll.findById(this.pollId);
           if(!poll) return false;
-          return (poll.pollOptions as Array<{ _id: string }>).some((option) => option._id == voterVoteOptionId);
+          return (poll.pollOptions as Array<{ _id: string }>).some((option) => option._id == voteOptionId);
         },
         message: 'Vote option must be one of the valid options from the poll.'
       }
     },
     voterId: {
-      type: String,
+      type: Schema.Types.ObjectId,
       required: true,
     },
     voterIp: {
-      type: String,
+      type: Schema.Types.String,
       required: true
     },
     voterCountry: {
-      type: String,
+      type: Schema.Types.String,
       required: true
     },
     voterRegion: {
-      type: String,
+      type: Schema.Types.String,
       required: false
     },
     voterCity: {
-      type: String,
+      type: Schema.Types.String,
       required: false
     },
     voterEthnicity: {
-      type: String,
+      type: Schema.Types.String,
     },
     voterGender: {
-      type: String,
+      type: Schema.Types.String,
     }
   },
   {
@@ -72,4 +76,4 @@ const VoteSchema: Schema = new Schema({
   }
 );
 
-export default mongoose.model<Vote>('Vote', VoteSchema);
+export default mongoose.model<IVote>('Vote', VoteSchema);

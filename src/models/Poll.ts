@@ -1,33 +1,33 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 import { validate } from 'uuid';
 
-export interface Poll extends Document {
-    title: string;
-    description: string;
-    userId: string;
-    messages: {content: string}[];
-    pollOptions: {}[];
-    startDate: string;
-    endDate: string;
-    active: boolean;
-    public: boolean;
-}
-
-type MessageType = {
-    userId: mongoose.Schema.Types.ObjectId,
+export type MessageType = {
+    userId: string,
     consent: string,
     createdAt: Date
 }
 
-type PollOptionType = {
-    image: String,
-    pollOptionText: String,
-    count: {type: Number, default: 0}
+export type PollOptionType = {
+    image: string,
+    pollOptionText: string,
+    count: number
 }
 
-const PollSchema: Schema = new Schema({
+export interface IPoll extends Document {
+    title: string;
+    description: string;
+    creatorId: Types.ObjectId;
+    messages: MessageType[];
+    pollOptions: PollOptionType[];
+    startDate: Date;
+    endDate: Date;
+    active: boolean;
+    public: boolean;
+}
+
+const PollSchema = new Schema<IPoll>({
         title: {
-            type: String,
+            type: Schema.Types.String,
             required: true,
             validate: {
                 validator: function(title:string){
@@ -37,11 +37,11 @@ const PollSchema: Schema = new Schema({
             }
         },
         description: {
-            type: String,
+            type: Schema.Types.String,
             required: true,
         },
         creatorId: {
-            type: mongoose.Schema.Types.ObjectId,
+            type: Schema.Types.ObjectId,
             ref: 'User',
             validate: {
                 validator: async function(userId: string) {
@@ -55,9 +55,9 @@ const PollSchema: Schema = new Schema({
         },
         messages: {
             type: [{
-                userId: {type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
-                content: {type: String, required: true, maxLength: 500 },
-                createdAt: { type: Date, default: Date.now }
+                userId: {type: Schema.Types.ObjectId, ref: 'User', required: true},
+                content: {type: Schema.Types.String, required: true, maxLength: 500 },
+                createdAt: { type: Schema.Types.Date, default: Date.now }
             }],
             validate: {
                 validator: function(messages: Array<MessageType>){
@@ -68,10 +68,9 @@ const PollSchema: Schema = new Schema({
         },
         pollOptions: {
             type: [{
-                id: {type: mongoose.Schema.Types.ObjectId},
-                image: String,
-                pollOptionText: String,
-                count: {type: Number, default: 0}
+                image: {type: Schema.Types.String, required: true},
+                pollOptionText: {type: Schema.Types.String, required: true},
+                count: {type: Schema.Types.Number, required: true, default: 0}
             }],
             validate: {
                 validator: function(pollOptions: Array<PollOptionType>) {
@@ -82,20 +81,20 @@ const PollSchema: Schema = new Schema({
             required: true
         },
         startDate: {
-            type: Date,
+            type: Schema.Types.Date,
             default: Date.now,
         },
         endDate: {
-            type: Date,
+            type: Schema.Types.Date,
             default: () => new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
             required: true
         },
         active: {
-            type: Boolean,
+            type: Schema.Types.Boolean,
             default: true
         },
         public: {
-            type: Boolean,
+            type: Schema.Types.Boolean,
             default: false
         }
     },
@@ -104,4 +103,4 @@ const PollSchema: Schema = new Schema({
     }
 );
 
-export default mongoose.model<Poll>('Poll', PollSchema);
+export default mongoose.model<IPoll>('Poll', PollSchema);

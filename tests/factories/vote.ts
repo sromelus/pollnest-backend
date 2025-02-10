@@ -1,24 +1,11 @@
-import { Vote } from '../../src/models'
+import { Vote, IVote } from '../../src/models'
 
-export const testVote = (
-        options: {
-            pollId?: any,
-            voterId?: any,
-            voteOptionText?: string,
-            voterVoteOptionId?: string,
-            voterIp?: string,
-            voterCountry?: string,
-            voterRegion?: string,
-            voterCity?: string,
-            voterEthnicity?: string,
-            voterGender?: string
-        } = {}
-    ) => {
+export const testVote = (options: Partial<IVote>): IVote => {
         const defaults = {
-            pollId: '123',
-            voterId: '123',
+            pollId: '67a26660f5de61f22181db3d',
+            voterId: '67a26660f5de61f22181db3d',
             voteOptionText: 'trump',
-            voterVoteOptionId: '123',
+            voteOptionId: '67a26660f5de61f22181db3d',
             voterIp: '23',
             voterCountry: 'US',
             voterRegion: 'MA',

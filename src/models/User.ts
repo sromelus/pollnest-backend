@@ -1,52 +1,49 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import bcrypt from 'bcrypt';
 
-enum Role {
+export enum UserRole {
   Admin = 'admin',
   Subscriber = 'subscriber',
   User = 'user'
 };
 
-export interface User extends Document {
+export interface IUser extends Document {
     firstName: string;
-    lastName: string;
+    lastName?: string;
     email: string;
     password: string;
-    role: 'admin' | 'subscriber' | 'user'
+    role: UserRole;
+    name: string;
     comparePassword(password: string): Promise<boolean>;
 }
 
-const UserSchema: Schema = new Schema({
+const UserSchema = new Schema<IUser>({
         firstName: {
-            type: String,
+            type: Schema.Types.String,
             trim: true,
             required: true,
             minLength: [2, 'First name must be at least 2 characters long'],
             maxLength: [30, 'First name cannot exceed 30 characters']
         },
         lastName: {
-            type: String,
+            type: Schema.Types.String,
             trim: true,
             maxLength: [30, 'Last name cannot exceed 30 characters']
         },
         email: {
-            type: String,
+            type: Schema.Types.String,
             required: [true, 'Email is required'],
             unique: true,
             trim: true,
             lowercase: true,
+            match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Invalid email format'],
             maxLength: [50, 'Email cannot be more than 50 characters'],
             validate: [
                 {
-                    validator: function(email: string) {
-                        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-                    },
-                    message: 'Invalid email format'
-                },
-                {
-                    validator: async function(email: string) {
+                    validator: async function(this: mongoose.Document & Partial<IUser>, email: string) {
                         if (this.isModified('email')) {
-                            const user = await this.constructor.findOne({ email: email.toLowerCase() });
+                            const user = await (this.constructor as typeof mongoose.Model)
+                                        .findOne({ email: email.toLowerCase() });
                             return !user;
                         }
                         return true;
@@ -56,7 +53,7 @@ const UserSchema: Schema = new Schema({
             ]
         },
         password: {
-            type: String,
+            type: Schema.Types.String,
             required: true,
             minLength: [8, 'Password must be at least 8 characters long'],
             maxLength: [128, 'Password cannot exceed 128 characters'],
@@ -69,9 +66,10 @@ const UserSchema: Schema = new Schema({
             }
         },
         role: {
-            type: String,
-            enum: ['admin','subscriber','user'],
-            default: Role.User
+            type: Schema.Types.String,
+            enum: Object.values(UserRole),
+            required: true,
+            default: UserRole.User
         }
     },
     {
@@ -80,7 +78,7 @@ const UserSchema: Schema = new Schema({
 );
 
 // Add pre-save middleware to hash password
-UserSchema.pre('save', async function(next) {
+UserSchema.pre('save', async function(this: IUser, next) {
     if (!this.isModified('password')) return next();
 
     try {
@@ -92,13 +90,13 @@ UserSchema.pre('save', async function(next) {
     }
 });
 
-UserSchema.virtual('name').get(function() {
+UserSchema.virtual('name').get(function(this: IUser) {
     return `${this.firstName} ${this.lastName}`;
 });
 
 // Add method to compare passwords
-UserSchema.methods.comparePassword = async function(password: string): Promise<boolean> {
-    return bcrypt.compare(password, this.password as string);
+UserSchema.methods.comparePassword = async function(this: IUser, password: string): Promise<boolean> {
+    return bcrypt.compare(password, this.password);
 };
 
-export default mongoose.model<User>('User', UserSchema);
+export default mongoose.model<IUser>('User', UserSchema);

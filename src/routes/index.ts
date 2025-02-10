@@ -26,11 +26,11 @@ const defaultRoutes = [
         route: pollRoutes
     },
     {
-        path: '/polls/:id/votes',
+        path: '/polls/:pollId/votes',
         route: voteRoutes
     },
     {
-        path: '/polls/:id/chat',
+        path: '/polls/:pollId/chat',
         route: chatRoutes
     }
 ]

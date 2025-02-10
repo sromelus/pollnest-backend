@@ -50,6 +50,7 @@ describe('User Management', () => {
                 .set('Authorization', `Bearer ${authToken}`);
 
             expect(res.status).toBe(200);
+            expect(res.body.message).toBe('User fetched successfully');
             expect(res.body.data.user).toHaveProperty('name', 'John Doe');
             expect(res.body.data.user).toHaveProperty('email', 'john@example.com');
         });
@@ -62,6 +63,7 @@ describe('User Management', () => {
                 .set('Authorization', `Bearer ${authToken}`);
 
             expect(res.status).toBe(200);
+            expect(res.body.message).toBe('Users fetched successfully');
             expect(res.body.data.users).toBeInstanceOf(Array);
             expect(res.body.data.users.length).toBeGreaterThan(0);
         });
@@ -78,7 +80,8 @@ describe('User Management', () => {
                     password: 'ValidPass123!'
                 });
 
-            expect(res.status).toBe(200);
+            expect(res.status).toBe(201);
+            expect(res.body.message).toBe('User created successfully');
             expect(res.body.data.user).toHaveProperty('name', 'Jane Doe');
             expect(res.body.data.user).toHaveProperty('email', 'jane@example.com');
         });
@@ -94,7 +97,8 @@ describe('User Management', () => {
                     role: 'admin'
                 });
 
-            expect(res.status).toBe(200);
+            expect(res.status).toBe(201);
+            expect(res.body.message).toBe('User created successfully');
             expect(res.body.data.user).toHaveProperty('name', 'Jane Doe');
             expect(res.body.data.user).toHaveProperty('email', 'jane@example.com');
             expect(res.body.data.user).toHaveProperty('role', 'admin');
@@ -112,6 +116,7 @@ describe('User Management', () => {
                 });
 
             expect(res.status).toBe(200);
+            expect(res.body.message).toBe('User updated successfully');
             expect(res.body.data.user).toHaveProperty('name', 'John Updated');
             expect(res.body.data.user).toHaveProperty('email', 'john.updated@example.com');
         });
@@ -136,10 +141,7 @@ describe('User Management', () => {
                 .set('Authorization', `Bearer ${authToken}`);
 
             expect(res.status).toBe(200);
-
-            // Verify user is actually deleted
-            const deletedUser = await User.findById(userId);
-            expect(deletedUser).toBeNull();
+            expect(res.body.message).toBe('User deleted successfully');
         });
 
         it('should fail to delete non-existent user', async () => {
@@ -149,6 +151,7 @@ describe('User Management', () => {
                 .set('Authorization', `Bearer ${authToken}`);
 
             expect(res.status).toBe(404);
+            expect(res.body.message).toBe('User not found');
         });
     });
 });

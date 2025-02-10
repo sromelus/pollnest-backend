@@ -1,10 +1,16 @@
-import User from "./User";
-import Poll from "./Poll";
-import Vote from "./Vote";
+import User, { UserRole, IUser } from "./User";
+import Poll, { MessageType, PollOptionType, IPoll } from "./Poll";
+import Vote, { IVote } from "./Vote";
 
 
 export {
     User,
+    UserRole,
+    IUser,
     Poll,
-    Vote
+    MessageType,
+    PollOptionType,
+    IPoll,
+    Vote,
+    IVote
 }
