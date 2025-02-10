@@ -1,5 +1,6 @@
 import mongoose, { ConnectOptions } from 'mongoose';
 import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
+import { User } from '../models';
 
 async function getMongoUri() {
     const secretName = process.env.MONGODB_URI;
@@ -26,7 +27,8 @@ async function connectToDatabase() {
 
     return mongoose.connect(connectionString, {
         useNewUrlParser: true,
-        useUnifiedTopology: true
+        useUnifiedTopology: true,
+        autoIndex: process.env.NODE_ENV !== 'production'
     } as ConnectOptions);
 }
 
@@ -50,4 +52,20 @@ process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
 const dbConnection = mongoose.connection;
-export default dbConnection;
+
+// After connection is established, create indexes explicitly in production
+dbConnection.once('connected', async () => {
+    if (process.env.NODE_ENV === 'production') {
+        try {
+            // Example: Create indexes for your models here
+            // await YourModel.createIndexes();
+            // await AnotherModel.createIndexes();
+            await User.createIndexes();
+            console.log('Database indexes created successfully');
+        } catch (error) {
+            console.error('Error creating database indexes:', error);
+        }
+    }
+        });
+
+        export default dbConnection;

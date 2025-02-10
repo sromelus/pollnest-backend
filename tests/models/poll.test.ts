@@ -70,4 +70,18 @@ describe('Poll Model', () => {
             expect((error as any).errors.pollOptions.message).toBe('You should provide at least 2 poll options');
         }
     });
+
+    it('should not have longer than 200 messages in poll messages array', async () => {
+        const savedAdmin = testUser({email: 'admin4@example.com', role: UserRole.Admin});
+        await savedAdmin.save();
+        const poll = testPoll({ creatorId: savedAdmin.id, messages: Array(201).fill({userId: savedAdmin.id, content: 'hello world', createdAt: Date.now()}) });
+
+        try {
+            await poll.save();
+            fail('Should not succeed in saving with more than 200 messages');
+        } catch (error) {
+            expect((error as Error).message).toBe('Poll validation failed: messages: Messages array exceeds the maximum limit of 200.');
+        }
+
+    });
 });
