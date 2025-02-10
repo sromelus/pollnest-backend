@@ -1,5 +1,6 @@
 import { body, validationResult } from 'express-validator';
 import { Request, Response, NextFunction, RequestHandler } from 'express';
+import { PollOptionType } from '../models';
 
 // Validation middleware
 export const validatePoll: RequestHandler[] = [
@@ -8,7 +9,7 @@ export const validatePoll: RequestHandler[] = [
   body('pollOptions')
     .isArray({ min: 2 }).withMessage('At least 2 poll options are required')
     .custom((options) => {
-      return options.every((option: any) =>
+      return options.every((option: PollOptionType) =>
         typeof option.pollOptionText === 'string' && option.pollOptionText.length >= 2
       );
     }).withMessage('Each poll option must have valid text'),

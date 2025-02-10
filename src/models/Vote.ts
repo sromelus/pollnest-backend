@@ -18,7 +18,7 @@ const VoteSchema = new Schema<IVote>({
       type: Schema.Types.ObjectId,
       ref: 'Poll',
       validate: {
-        validator: async function(this: any, pollId: string) {
+        validator: async function(this: IVote, pollId: string) {
           const Poll = mongoose.model('Poll');
           const poll = await Poll.findById(pollId);
           return poll !== null;
@@ -46,6 +46,7 @@ const VoteSchema = new Schema<IVote>({
     },
     voterId: {
       type: Schema.Types.ObjectId,
+      ref: 'User',
       required: true,
     },
     voterIp: {

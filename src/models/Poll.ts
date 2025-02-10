@@ -8,6 +8,7 @@ export type MessageType = {
 }
 
 export type PollOptionType = {
+    _id?: string,
     image: string,
     pollOptionText: string,
     count: number

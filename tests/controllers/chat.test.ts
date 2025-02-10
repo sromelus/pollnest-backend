@@ -3,9 +3,8 @@ import request from 'supertest';
 import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/dbTestConfig';
 import { testPoll, testUser } from "../factories";
 import routes from '../../src/routes';
-import { UserRole } from '../../src/models/User';
+import { UserRole, IPoll } from '../../src/models';
 import { Types } from 'mongoose';
-
 
 beforeAll(async () => {
     await dbConnect();
@@ -39,7 +38,7 @@ describe('Chat Controller', () => {
 
     describe('Poll Chat', () => {
         let pollId: string;
-        let poll: any;
+        let poll: IPoll;
 
         beforeEach(async () => {
             poll = testPoll({ creatorId: userId });
@@ -57,7 +56,7 @@ describe('Chat Controller', () => {
 
     describe('Poll Chat new message', () => {
         let pollId: string;
-        let poll: any;
+        let poll: IPoll;
 
         beforeEach(async () => {
             poll = testPoll({ creatorId: userId });

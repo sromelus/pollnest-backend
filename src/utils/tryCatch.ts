@@ -5,7 +5,7 @@ export const tryCatch = (handler: RequestHandler): RequestHandler => {
     return async (req, res, next) => {
         try {
             await handler(req, res, next);
-        } catch (error: any) {
+        } catch (error) {
             if ((error as Error).name === 'ValidationError') {
                 res.status(400).send({
                     success: false,
