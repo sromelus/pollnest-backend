@@ -3,7 +3,7 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 export interface IVote extends Document {
   pollId: Types.ObjectId,
   voteOptionText: string;
-  voteOptionId: string,
+  pollOptionId: string,
   voterId: Types.ObjectId;
   voterIp: string,
   voterCountry: string,
@@ -31,15 +31,15 @@ const VoteSchema = new Schema<IVote>({
       type: String,
       required: true,
     },
-    voteOptionId: {
+    pollOptionId: {
       type: Schema.Types.String,
       required: true,
       validate: {
-        validator: async function(this: IVote, voteOptionId: string) {
+        validator: async function(this: IVote, pollOptionId: string) {
           const Poll = mongoose.model('Poll');
           const poll = await Poll.findById(this.pollId);
           if(!poll) return false;
-          return (poll.pollOptions as Array<{ _id: string }>).some((option) => option._id == voteOptionId);
+          return (poll.pollOptions as Array<{ _id: string }>).some((option) => option._id == pollOptionId);
         },
         message: 'Vote option must be one of the valid options from the poll.'
       }

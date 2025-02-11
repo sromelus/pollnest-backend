@@ -56,7 +56,7 @@ describe('Vote Controller', () => {
                 voterEthnicity: 'black',
                 voterGender: 'male',
                 voteOptionText: 'kamala',
-                voteOptionId: kamalaOption._id,
+                pollOptionId: kamalaOption._id,
                 voterIp: '123',
                 voterCountry: 'US',
                 voterRegion: 'MA',
@@ -69,21 +69,21 @@ describe('Vote Controller', () => {
         expect(res.body.data.optionVoteTally.count).toBe(1);
     });
 
-    it('should not create a vote if the voteOptionId is not found', async () => {
+    it('should not create a vote if the pollOptionId is not found', async () => {
         const res = await request(app).post(`/api/v1/polls/${poll.id}/votes`).set('Authorization', `Bearer ${authToken}`).send({
             pollId: poll.id,
             voterId,
             voterEthnicity: 'black',
             voterGender: 'male',
             voteOptionText: 'kamala',
-            voteOptionId: '67a2fc834e011d27320e4e79',
+            pollOptionId: '67a2fc834e011d27320e4e79',
             voterIp: '123',
             voterCountry: 'US',
             voterRegion: 'MA',
             voterCity: 'Natick',
         })
 
-        expect(res.status).toBe(400);
-        expect(res.body.errors).toBe('Vote validation failed: voteOptionId: Vote option must be one of the valid options from the poll.');
+        expect(res.status).toBe(404);
+        expect(res.body.message).toBe('Poll or option not found');
     })
 })

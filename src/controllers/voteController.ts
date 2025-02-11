@@ -46,41 +46,46 @@ const getVoterLocationInfo = (req: Request): VoterLocationInfo => {
 export default class VoteController {
     static createVote: RequestHandler = tryCatch(async (req, res) => {
         const { pollId } = req.params;
+        const { pollOptionId } = req.body;
 
-        const poll = await Poll.findById(pollId) as IPoll | null;
+        const poll = await Poll.findOneAndUpdate(
+            {
+                _id: pollId,
+                'pollOptions._id': pollOptionId
+            },
+            {
+                $inc: { 'pollOptions.$.count': 1 }
+            },
+            {
+                new: true,
+                runValidators: true
+            }
+        ) as IPoll | null;
 
         if (!poll) {
-            res.status(404).send({ success: false, message: 'Poll not found for this vote' });
+            res.status(404).send({
+                success: false,
+                message: 'Poll or option not found'
+            });
             return;
         }
 
         const voterLocationInfo = getVoterLocationInfo(req);
 
-        await Vote.create({ pollId: pollId, ...req.body, ...voterLocationInfo });
+        await Vote.create({ ...req.body, ...voterLocationInfo });
 
-        const { voteOptionId } = req.body;
-
-        const pollOption = poll.pollOptions.find((option: PollOption) => option._id == voteOptionId);
-
-        if (!pollOption) {
-            res.status(404).send({ success: false, message: 'Option not found for this vote' });
-            return;
-        }
-
-        pollOption.count += 1;
-
-        await poll.save();
-
-        const responseOption = {
-            pollOptionText: pollOption.pollOptionText,
-            count: pollOption.count,
-            _id: pollOption._id
-        };
+        const updatedOption = poll.pollOptions.find(option => option._id.toString() === pollOptionId);
 
         res.status(201).send({
             success: true,
             message: 'Vote created successfully',
-            data: { optionVoteTally: responseOption }
+            data: {
+                optionVoteTally: {
+                    pollOptionText: updatedOption?.pollOptionText,
+                    count: updatedOption?.count,
+                    _id: updatedOption?._id
+                }
+            }
         });
     });
 }
