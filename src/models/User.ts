@@ -15,6 +15,7 @@ export interface IUser extends Document {
     role: UserRole;
     name: string;
     comparePassword(password: string): Promise<boolean>;
+    userIp: string;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -64,6 +65,9 @@ const UserSchema = new Schema<IUser>({
                 },
                 message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
             }
+        },
+        userIp: {
+            type: Schema.Types.String,
         },
         role: {
             type: Schema.Types.String,

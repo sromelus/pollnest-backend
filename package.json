@@ -2,7 +2,7 @@
   "name": "election-poll-backend",
   "version": "1.0.0",
   "main": "index.js",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "scripts": {
     "build": "tsc",
     "deploy": "yarn build && google-cloud-sdk/bin/gcloud app deploy",
