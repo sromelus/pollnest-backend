@@ -57,10 +57,13 @@ const dbConnection = mongoose.connection;
 dbConnection.once('connected', async () => {
     if (process.env.NODE_ENV === 'production') {
         try {
-            // Example: Create indexes for your models here
-            // await YourModel.createIndexes();
-            // await AnotherModel.createIndexes();
-            await User.createIndexes();
+            const modelsNames = mongoose.modelNames();
+            await Promise.all(
+                modelsNames.map(modelName => {
+                    mongoose.model(modelName).createIndexes();
+                })
+            );
+
             console.log('Database indexes created successfully');
         } catch (error) {
             console.error('Error creating database indexes:', error);

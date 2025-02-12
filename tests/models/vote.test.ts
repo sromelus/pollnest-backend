@@ -1,7 +1,6 @@
 import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/dbTestConfig';
 import { testUser, testPoll, testVote } from '../factories';
 import { UserRole } from '../../src/models';
-import { Types } from 'mongoose';
 
 beforeAll(async () => {
     await dbConnect();
