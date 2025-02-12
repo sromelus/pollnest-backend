@@ -66,6 +66,6 @@ dbConnection.once('connected', async () => {
             console.error('Error creating database indexes:', error);
         }
     }
-        });
+});
 
-        export default dbConnection;
+export default dbConnection;
