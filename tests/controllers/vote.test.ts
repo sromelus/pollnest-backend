@@ -105,8 +105,8 @@ describe('Vote Controller', () => {
 
                 const voteCount = await Vote.countDocuments({ voterIp: '127.0.0.1'});
 
-                // expect(res[0].status).toBe(201);
-                // expect(res[1].body.message).toBe('Vote created successfully');
+                expect(res10.status).toBe(201);
+                expect(res9.body.message).toBe('Vote created successfully');
                 expect(voteCount).toBe(10);
             });
 
