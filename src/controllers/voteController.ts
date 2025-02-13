@@ -1,7 +1,7 @@
-import { Request, RequestHandler } from 'express';
-import { Poll, Vote } from '../models';
-import { Document } from 'mongoose';
 import '../loadEnvironmentVariables';
+import { Request, RequestHandler } from 'express';
+import { Poll, Vote, User } from '../models';
+import { Document } from 'mongoose';
 import { envConfig } from '../config/environment';
 import { tryCatch } from '../utils';
 
@@ -45,13 +45,33 @@ const getVoterLocationInfo = (req: Request): VoterLocationInfo => {
 
 export default class VoteController {
     static createVote: RequestHandler = tryCatch(async (req, res) => {
-        const { pollId } = req.params;
-        const { pollOptionId } = req.body;
+        // just need to create a vote, no need to check for auth
+        // we should abstract this to a query object or something
+        // to be able to do
+        // const updatedOption = await CastVote(req.body)
+
+        // console.log('auth', auth());
+
+        const voterLocationInfo = getVoterLocationInfo(req);
+
+        const nonAuthVotes = await Vote.countDocuments({ voterIp: voterLocationInfo.voterIp });
+
+        const user = await User.exists({ _id: req.body.voterId });
+
+        if (!user && nonAuthVotes >= 5) {
+            res.status(403).send({
+                success: false,
+                message: 'You have reached the maximum number of votes. Please create an account to vote more.'
+            });
+            return;
+        }
+
+        const vote = await Vote.create({ ...req.body, ...voterLocationInfo });
 
         const poll = await Poll.findOneAndUpdate(
             {
-                _id: pollId,
-                'pollOptions._id': pollOptionId
+                _id: vote.pollId,
+                'pollOptions._id': vote.pollOptionId
             },
             {
                 $inc: { 'pollOptions.$.count': 1 }
@@ -70,11 +90,7 @@ export default class VoteController {
             return;
         }
 
-        const voterLocationInfo = getVoterLocationInfo(req);
-
-        await Vote.create({ ...req.body, ...voterLocationInfo });
-
-        const updatedOption = poll.pollOptions.find(option => option._id.toString() === pollOptionId);
+        const updatedOption = poll.pollOptions.find(option => option._id.toString() === vote.pollOptionId);
 
         res.status(201).send({
             success: true,

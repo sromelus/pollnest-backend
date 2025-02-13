@@ -6,7 +6,7 @@ export const testVote = (options: Partial<IVote>): IVote => {
             voterId: '67a26660f5de61f22181db3d',
             voteOptionText: 'trump',
             pollOptionId: '67a26660f5de61f22181db3d',
-            voterIp: '23',
+            voterIp: '127.0.0.1',
             voterCountry: 'US',
             voterRegion: 'MA',
             voterCity: 'Boston',

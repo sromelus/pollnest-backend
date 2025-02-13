@@ -1,6 +1,5 @@
 import mongoose, { ConnectOptions } from 'mongoose';
 import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
-import { User } from '../models';
 
 async function getMongoUri() {
     const secretName = process.env.MONGODB_URI;

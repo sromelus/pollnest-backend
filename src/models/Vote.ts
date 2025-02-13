@@ -4,7 +4,7 @@ export interface IVote extends Document {
   pollId: Types.ObjectId,
   voteOptionText: string;
   pollOptionId: string,
-  voterId: Types.ObjectId;
+  voterId?: Types.ObjectId;
   voterIp: string,
   voterCountry: string,
   voterRegion: string,
@@ -47,7 +47,7 @@ const VoteSchema = new Schema<IVote>({
     voterId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: false
     },
     voterIp: {
       type: Schema.Types.String,

@@ -1,6 +1,5 @@
 import { RequestHandler } from 'express';
 
-
 export const tryCatch = (handler: RequestHandler): RequestHandler => {
     return async (req, res, next) => {
         try {
@@ -12,6 +11,7 @@ export const tryCatch = (handler: RequestHandler): RequestHandler => {
                     message: 'Validation failed',
                     errors: (error as Error).message
                 });
+
                 return;
             }
 

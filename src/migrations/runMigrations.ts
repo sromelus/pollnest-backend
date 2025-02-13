@@ -4,7 +4,7 @@ import { migrations } from './scripts';
 import dbConnection from '../db/conn';
 import { createLogger } from '../config/logger';
 
-const logger = createLogger('development');
+const logger = createLogger(process.env.NODE_ENV || 'development');
 
 async function main() {
   try {

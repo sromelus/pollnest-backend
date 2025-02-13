@@ -12,23 +12,23 @@ const getVotesLimiter = rateLimit({
 });
 
 const voteLimiter = rateLimit({
-    // windowMs: 24 * 60 * 60 * 1000,
-    // max: 3,
-    // message: { error: 'You have exceeded the maximum number of votes. Please try again tomorrow.' },
+    windowMs: 1000 * 1,
+    max: 10,
+    message: { error: 'You have exceeded the maximum number of votes. Please try again tomorrow.' },
 });
 
-const messageLimiter = rateLimit({
-    // windowMs: 30 * 60 * 1000,
-    // max: 200,
-    // message: { error: 'You have exceeded the maximum number of messages. Please try again in 30 minutes.' },
-});
+// const messageLimiter = rateLimit({
+//     windowMs: 30 * 60 * 1000,
+//     max: 200,
+//     message: { error: 'You have exceeded the maximum number of messages. Please try again in 30 minutes.' },
+// });
 
 // router.get('/', getVotesLimiter, getVotes);
 // router.post('/', voteLimiter, validateVote, castVote as RequestHandler);
 // router.get('/chat', getVotesLimiter, getChatMessages);
 // router.post('/chat', messageLimiter, validateMessage, postMessage as RequestHandler);
 
-router.post('/', auth(), validateVote, voteController.createVote);
+router.post('/', auth({ required: false }), validateVote, voteController.createVote);
 
 
 export default router;
