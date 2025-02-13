@@ -1,6 +1,6 @@
 import { RequestHandler } from 'express';
 import { User } from '../models'
-import { splitFullName, tryCatch } from '../utils';
+import { splitFullName, tryCatch, voterLocationInfo } from '../utils';
 
 export default class RegistrationsController {
     static signup: RequestHandler = tryCatch(async (req, res) => {

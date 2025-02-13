@@ -1,9 +1,8 @@
 import '../loadEnvironmentVariables';
-import { Request, RequestHandler } from 'express';
+import { RequestHandler } from 'express';
 import { Poll, Vote, User } from '../models';
 import { Document } from 'mongoose';
-import { envConfig } from '../config/environment';
-import { tryCatch } from '../utils';
+import { tryCatch, voterLocationInfo } from '../utils';
 
 type PollOption = {
     image?: string;
@@ -16,32 +15,7 @@ interface IPoll extends Document {
     pollOptions: PollOption[];
 }
 
-interface VoterLocationInfo {
-    voterIp: string;
-    voterCity: string;
-    voterRegion: string;
-    voterCountry: string;
-}
 
-const getVoterLocationInfo = (req: Request): VoterLocationInfo => {
-    const config = envConfig[process.env.NODE_ENV || 'development'];
-
-    if (config.nodeEnv === 'test' || config.nodeEnv === 'development') {
-        return {
-            voterIp: '127.0.0.1',
-            voterCity: 'Medford',
-            voterRegion: 'MA',
-            voterCountry: 'US',
-        };
-    }
-
-    return {
-        voterIp: (req.headers['x-appengine-user-ip'] || req.headers['x-forwarded-for'] || req.ip) as string,
-        voterCity: req.headers['x-appengine-city'] as string,
-        voterRegion: req.headers['x-appengine-region'] as string,
-        voterCountry: req.headers['x-appengine-country'] as string,
-    };
-};
 
 export default class VoteController {
     static createVote: RequestHandler = tryCatch(async (req, res) => {
@@ -52,9 +26,9 @@ export default class VoteController {
 
         // console.log('auth', auth());
 
-        const voterLocationInfo = getVoterLocationInfo(req);
+        const voterLocInfo = voterLocationInfo(req);
 
-        const nonAuthVotes = await Vote.countDocuments({ voterIp: voterLocationInfo.voterIp });
+        const nonAuthVotes = await Vote.countDocuments({ voterIp: voterLocInfo.voterIp });
 
         const user = await User.exists({ _id: req.body.voterId });
 
@@ -66,7 +40,7 @@ export default class VoteController {
             return;
         }
 
-        const vote = await Vote.create({ ...req.body, ...voterLocationInfo });
+        const vote = await Vote.create({ ...req.body, ...voterLocInfo });
 
         const poll = await Poll.findOneAndUpdate(
             {
