@@ -1,5 +1,5 @@
 import { RequestHandler } from 'express';
-import { User } from '../models'
+import { User, Vote } from '../models'
 import { splitFullName, tryCatch, voterLocationInfo } from '../utils';
 
 export default class RegistrationsController {
@@ -13,6 +13,14 @@ export default class RegistrationsController {
             email,
             password
         });
+
+        // Match new user with existing votes
+        const voterLocInfo = voterLocationInfo(req);
+
+        await Vote.updateMany(
+            { voterIp: voterLocInfo.voterIp, voterId: undefined },
+            { voterId: user.id }
+        );
 
         res.status(200).send({
             success: true,

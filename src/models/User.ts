@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import bcrypt from 'bcrypt';
+import Vote, { IVote } from './Vote';
 
 export enum UserRole {
   Admin = 'admin',
@@ -16,6 +17,7 @@ export interface IUser extends Document {
     name: string;
     comparePassword(password: string): Promise<boolean>;
     userIp: string;
+    votes: () => Promise<IVote[]>;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -101,6 +103,10 @@ UserSchema.virtual('name').get(function(this: IUser) {
 // Add method to compare passwords
 UserSchema.methods.comparePassword = async function(this: IUser, password: string): Promise<boolean> {
     return bcrypt.compare(password, this.password);
+};
+
+UserSchema.methods.votes = async function(this: IUser) {
+    return await Vote.find({ voterId: this._id });
 };
 
 export default mongoose.model<IUser>('User', UserSchema);

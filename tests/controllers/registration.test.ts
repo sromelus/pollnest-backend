@@ -2,8 +2,8 @@ import express from 'express';
 import request from 'supertest';
 import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/dbTestConfig';
 import routes from '../../src/routes';
-import { User } from '../../src/models';
-import { decodeToken } from '../../src/utils/jwt';
+import { User, Vote, UserRole, IUser } from '../../src/models';
+import { testVote, testPoll, testUser } from '../factories';
 
 beforeAll(async () => {
     await dbConnect();
@@ -174,6 +174,32 @@ describe('User Registration', () => {
 
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('message', 'User deleted successfully');
+    });
+  });
+
+  describe('Match new user with existing votes', () => {
+    it('should match new user with existing votes', async () => {
+      const admin = await testUser({ role: UserRole.Admin }).save();
+      const poll = await testPoll({ creatorId: admin.id }).save();
+      const pollOptionId = poll.pollOptions[0]._id;
+
+      await testVote({ voterIp: '127.0.0.1', voterId: undefined, pollId: poll.id, pollOptionId }).save();
+      await testVote({ voterIp: '127.0.0.1', voterId: undefined, pollId: poll.id, pollOptionId }).save();
+      await testVote({ voterIp: '127.0.0.1', voterId: undefined, pollId: poll.id, pollOptionId }).save();
+
+      const res = await request(app).post('/api/v1/registration/signup').send({
+        name: 'John Doe',
+        email: 'john@example.com',
+        password: 'ValidPass123!'
+      });
+
+
+      const nonAuthUser = await User.findById(res.body.data.user.id) as IUser;
+      const votes = await nonAuthUser.votes();
+
+      expect(res.status).toBe(200);
+      expect(nonAuthUser).toBeDefined();
+      expect(votes).toHaveLength(3);
     });
   });
 });
