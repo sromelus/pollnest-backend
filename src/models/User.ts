@@ -19,6 +19,7 @@ export interface IUser extends Document {
     userIp: string;
     votes: () => Promise<IVote[]>;
     points: number;
+    voteCount: number;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -79,7 +80,12 @@ const UserSchema = new Schema<IUser>({
             default: UserRole.User
         },
         points: {
-            type: Number,
+            type: Schema.Types.Number,
+            default: 0,
+            min: 0
+        },
+        voteCount: {
+            type: Schema.Types.Number,
             default: 0,
             min: 0
         }

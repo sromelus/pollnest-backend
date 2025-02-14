@@ -63,19 +63,25 @@ export default class VoteController {
             return;
         }
 
-        let pointsData = {};
-        // Only award points if there's an authenticated user
+        let userData = {};
+        // Only update stats if there's an authenticated user
         if (vote.voterId) {
-            // Award 1 point to the user
+            // Increment both points and vote count
             const user = await User.findByIdAndUpdate(
                 vote.voterId,
-                { $inc: { points: 1 } },
+                {
+                    $inc: {
+                        points: 1,
+                        voteCount: 1
+                    }
+                },
                 { new: true }
             );
 
-            pointsData = {
+            userData = {
                 pointsEarned: 1,
-                totalPoints: user?.points || 0
+                totalPoints: user?.points || 0,
+                voteCount: user?.voteCount || 0
             };
         }
 
@@ -90,7 +96,7 @@ export default class VoteController {
                     count: updatedOption?.count,
                     _id: updatedOption?._id
                 },
-                ...pointsData
+                ...userData
             }
         });
     });

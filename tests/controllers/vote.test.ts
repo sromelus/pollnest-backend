@@ -358,4 +358,77 @@ describe('Vote Controller', () => {
             expect(res3.body.data).toHaveProperty('totalPoints', 3);
         });
     })
+
+    describe('Vote Count Tracking', () => {
+        it('should increment vote count for authenticated user when voting', async () => {
+            const kamalaOption = poll.pollOptions.find((option: PollOptionType) => option.pollOptionText === 'kamala') as PollOptionType;
+
+            const res = await request(app)
+                .post(`/api/v1/polls/${poll.id}/votes`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    pollId: poll.id,
+                    voterId,
+                    voterEthnicity: 'black',
+                    voterGender: 'male',
+                    voteOptionText: 'kamala',
+                    pollOptionId: kamalaOption._id,
+                    voterIp: '127.0.0.1',
+                    voterCountry: 'US',
+                    voterRegion: 'MA',
+                    voterCity: 'Natick'
+                });
+
+            expect(res.status).toBe(201);
+            expect(res.body.data).toHaveProperty('voteCount', 1);
+        });
+
+        it('should accumulate vote count for multiple votes', async () => {
+            const kamalaOption = poll.pollOptions.find((option: PollOptionType) => option.pollOptionText === 'kamala') as PollOptionType;
+
+            const voteRequest = () => request(app)
+                .post(`/api/v1/polls/${poll.id}/votes`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    pollId: poll.id,
+                    voterId,
+                    voterEthnicity: 'black',
+                    voterGender: 'male',
+                    voteOptionText: 'kamala',
+                    pollOptionId: kamalaOption._id,
+                    voterIp: '127.0.0.1',
+                    voterCountry: 'US',
+                    voterRegion: 'MA',
+                    voterCity: 'Natick'
+                });
+
+            await voteRequest();
+            await voteRequest();
+            const res = await voteRequest();
+
+            expect(res.status).toBe(201);
+            expect(res.body.data).toHaveProperty('voteCount', 3);
+        });
+
+        it('should not track vote count for non-authenticated users', async () => {
+            const kamalaOption = poll.pollOptions.find((option: PollOptionType) => option.pollOptionText === 'kamala') as PollOptionType;
+
+            const res = await request(app)
+                .post(`/api/v1/polls/${poll.id}/votes`)
+                .send({
+                    pollId: poll.id,
+                    voterEthnicity: 'black',
+                    voterGender: 'male',
+                    voteOptionText: 'kamala',
+                    pollOptionId: kamalaOption._id,
+                    voterIp: '127.0.0.1',
+                    voterCountry: 'US',
+                    voterRegion: 'MA',
+                    voterCity: 'Natick'
+                });
+
+            expect(res.status).toBe(201);
+            expect(res.body.data).not.toHaveProperty('voteCount');
+        });
+    });
 })
