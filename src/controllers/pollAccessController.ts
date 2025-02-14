@@ -1,0 +1,86 @@
+import { Request, Response, RequestHandler } from 'express';
+import { Poll, User, UserRole, IUser } from '../models';
+import { generateToken, verifyToken, generateInviteToken, tryCatch } from '../utils';
+
+export class PollAccessController {
+    static generatePollInvites: RequestHandler = tryCatch(async (req, res) => {
+            const { pollId } = req.params;
+            const { emails, expiresIn = 1000 * 60 * 60 * 24 * 7 } = req.body;
+            const { currentUserId} = (req as any);
+
+            // Verify poll exists and is private
+            const poll = await Poll.findById(pollId);
+            if (!poll) {
+                res.status(404).json({
+                    success: false,
+                    message: 'Poll not found'
+                });
+                return;
+            }
+
+            // Verify user is poll creator or admin
+            if (poll.creatorId.toString() !== currentUserId && (await User.findById(currentUserId) as IUser).role !== UserRole.Admin) {
+                res.status(403).json({
+                    success: false,
+                    message: 'Only poll creator can generate invite links'
+                });
+                return;
+            }
+
+            // Generate tokens for each email
+            const invites = emails.map((email: string) => {
+                const token = generateInviteToken({
+                    pollId: poll.id,
+                    email,
+                    type: 'poll-invite',
+                    expiresIn
+                });
+
+                return {
+                    email,
+                    accessToken: token,
+                    accessLink: `${process.env.FRONTEND_URL}/poll/${token}`,
+                    expiresIn
+                };
+            });
+
+            res.status(200).json({
+                success: true,
+                message: 'Poll invites generated successfully',
+                data: {
+                    invites
+                }
+            });
+    });
+
+    static accessPollWithToken: RequestHandler = tryCatch(async (req, res) => {
+            const { token } = req.params;
+
+            // Verify token
+            const decoded = verifyToken(token);
+            if (typeof decoded === 'string' || decoded.type !== 'poll-invite') {
+                res.status(403).json({
+                    success: false,
+                    message: 'Invalid or expired access token'
+                });
+                return;
+            }
+
+            // Get poll
+            const poll = await Poll.findById(decoded.pollId);
+            if (!poll) {
+                res.status(404).json({
+                    success: false,
+                    message: 'Poll not found'
+                });
+                return;
+            }
+
+            res.status(200).json({
+                success: true,
+                data: {
+                    poll: poll,
+                }
+            });
+    })
+}

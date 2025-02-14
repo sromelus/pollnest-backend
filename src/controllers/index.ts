@@ -4,6 +4,7 @@ import UsersController from './usersController'
 import AuthController from './authController'
 import PollController from './pollController'
 import ChatController from './chatController'
+import { PollAccessController } from './pollAccessController'
 
 export {
     RegistrationController,
@@ -11,5 +12,6 @@ export {
     AuthController,
     PollController,
     voteController,
-    ChatController
+    ChatController,
+    PollAccessController
 }

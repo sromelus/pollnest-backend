@@ -1,5 +1,5 @@
-import { RequestHandler, Router } from 'express';
-import { PollController } from '../controllers';
+import { Router } from 'express';
+import { PollController, PollAccessController } from '../controllers';
 import rateLimit from 'express-rate-limit';
 import { validatePoll, validatePollUpdate } from '../validations';
 import { auth } from '../middlewares';
@@ -31,5 +31,9 @@ router.get('/:pollId/options', PollController.getPollOptions);
 router.post('/', auth(), validatePoll, PollController.createPoll);
 router.put('/:pollId', auth(), validatePollUpdate, PollController.updatePoll);
 router.delete('/:pollId', auth(), PollController.deletePoll);
+
+router.post('/:pollId/invites', auth(), PollAccessController.generatePollInvites);
+router.get('/access/:token', PollAccessController.accessPollWithToken);
+
 
 export default router;
