@@ -63,6 +63,22 @@ export default class VoteController {
             return;
         }
 
+        let pointsData = {};
+        // Only award points if there's an authenticated user
+        if (vote.voterId) {
+            // Award 1 point to the user
+            const user = await User.findByIdAndUpdate(
+                vote.voterId,
+                { $inc: { points: 1 } },
+                { new: true }
+            );
+
+            pointsData = {
+                pointsEarned: 1,
+                totalPoints: user?.points || 0
+            };
+        }
+
         const updatedOption = poll.pollOptions.find(option => option._id.toString() === vote.pollOptionId);
 
         res.status(201).send({
@@ -73,7 +89,8 @@ export default class VoteController {
                     pollOptionText: updatedOption?.pollOptionText,
                     count: updatedOption?.count,
                     _id: updatedOption?._id
-                }
+                },
+                ...pointsData
             }
         });
     });

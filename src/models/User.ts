@@ -18,6 +18,7 @@ export interface IUser extends Document {
     comparePassword(password: string): Promise<boolean>;
     userIp: string;
     votes: () => Promise<IVote[]>;
+    points: number;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -76,6 +77,11 @@ const UserSchema = new Schema<IUser>({
             enum: Object.values(UserRole),
             required: true,
             default: UserRole.User
+        },
+        points: {
+            type: Number,
+            default: 0,
+            min: 0
         }
     },
     {
