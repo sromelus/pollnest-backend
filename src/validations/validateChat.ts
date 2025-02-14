@@ -9,7 +9,7 @@ export const validateCreateChatMessage: RequestHandler[] = [
     (req: Request, res: Response, next: NextFunction): void => {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        res.status(400).json({ success: false, message: 'validation error', errors: errors.array() });
+        res.status(400).json({ success: false, message: errors.array() });
         return;
       }
       next();

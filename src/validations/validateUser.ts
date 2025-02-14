@@ -10,7 +10,7 @@ export const validateUser: RequestHandler[] = [
   (req: Request, res: Response, next: NextFunction): void => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      res.status(400).json({ success: false, message: 'validation error', errors: errors.array().map(error => error.msg)[0] });
+      res.status(400).json({ success: false, message: errors.array().map(error => error.msg).join(', ') });
       return;
     }
     next();
@@ -26,7 +26,7 @@ export const validateUpdateUser: RequestHandler[] = [
   (req: Request, res: Response, next: NextFunction): void => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      res.status(400).json({ success: false, message: 'validation error', errors: errors.array().map(error => error.msg)[0] });
+      res.status(400).json({ success: false, message: errors.array().map(error => error.msg).join(', ') });
       return;
     }
     next();

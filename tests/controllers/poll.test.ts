@@ -113,7 +113,7 @@ describe('Poll Controller', () => {
             });
 
             expect(res.status).toBe(400);
-            expect(res.body.message).toBe('validation error');
+            expect(res.body.message).toContain("Title must be a string, Description must be a string, At least 2 poll options are required, Creator ID must be a string");
         });
     });
 

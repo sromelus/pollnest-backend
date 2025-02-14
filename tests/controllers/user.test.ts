@@ -130,7 +130,7 @@ describe('User Management', () => {
                 });
 
             expect(res.status).toBe(400);
-            expect(res.body.errors).toBe("Invalid value");
+            expect(res.body.message).toContain("Invalid value");
         });
     });
 

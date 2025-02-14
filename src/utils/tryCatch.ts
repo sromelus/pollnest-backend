@@ -10,7 +10,6 @@ export const tryCatch = (handler: RequestHandler): RequestHandler => {
                     success: false,
                     message: (error as Error).message,
                 });
-
                 return;
             }
 
