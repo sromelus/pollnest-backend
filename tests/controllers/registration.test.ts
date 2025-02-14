@@ -106,7 +106,7 @@ describe('User Registration', () => {
       });
 
       expect(res.status).toBe(400);
-      expect(res.body.errors).toBe("User validation failed: email: Email already exists");
+      expect(res.body.message).toContain("Email already exists");
     });
   });
 

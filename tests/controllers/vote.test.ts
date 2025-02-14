@@ -125,7 +125,7 @@ describe('Vote Controller', () => {
                 })
 
                 expect(res.status).toBe(400);
-                expect(res.body.errors).toBe('Vote validation failed: pollOptionId: Vote option must be one of the valid options from the poll.');
+                expect(res.body.message).toContain('Vote validation failed: pollOptionId: Vote option must be one of the valid options from the poll.');
             })
         });
 
@@ -220,6 +220,64 @@ describe('Vote Controller', () => {
                 expect(res6.status).toBe(403);
                 expect(res6.body.message).toBe('You have reached the maximum number of votes. Please create an account to vote more.');
                 expect(voteCount).not.toBeGreaterThan(5);
+            })
+        })
+
+        describe('Only allow one vote for Polls with allowMultipleVotes set to false', () => {
+            it('registered users should be able to create only one vote', async () => {
+                const poll = await testPoll({ creatorId: voterId, allowMultipleVotes: false}).save();
+                const kamalaOption = poll.pollOptions.find((option: PollOptionType) => option.pollOptionText === 'kamala') as PollOptionType;
+
+                const requestPromises = () => request(app)
+                    .post(`/api/v1/polls/${poll.id}/votes`)
+                    .set('Authorization', `Bearer ${authToken}`)
+                    .send({
+                        pollId: poll.id,
+                        voterId,
+                        voterEthnicity: 'black',
+                        voterGender: 'male',
+                        voteOptionText: 'kamala',
+                        pollOptionId: kamalaOption._id,
+                        voterIp: '127.0.0.1',
+                        voterCountry: 'US',
+                        voterRegion: 'MA',
+                        voterCity: 'Natick'
+                    })
+
+                const res1 = await requestPromises();
+                const res2 = await requestPromises();
+
+                expect(res1.status).toBe(201);
+                expect(res1.body.message).toBe('Vote created successfully');
+                expect(res2.status).toBe(400);
+                expect(res2.body.message).toContain('You have already voted for this poll.');
+            })
+
+            it('non registered users should not be able to create a vote', async () => {
+                const poll = await testPoll({ creatorId: voterId, allowMultipleVotes: false}).save();
+                const kamalaOption = poll.pollOptions.find((option: PollOptionType) => option.pollOptionText === 'kamala') as PollOptionType;
+
+                const requestPromises = () => request(app)
+                    .post(`/api/v1/polls/${poll.id}/votes`)
+                    .set('Authorization', `Bearer ${authToken}`)
+                    .send({
+                        pollId: poll.id,
+                        // voterId: undefined, non-registered user voterId
+                        voterEthnicity: 'black',
+                        voterGender: 'male',
+                        voteOptionText: 'kamala',
+                        pollOptionId: kamalaOption._id,
+                        voterIp: '127.0.0.1',
+                        voterCountry: 'US',
+                        voterRegion: 'MA',
+                        voterCity: 'Natick'
+                    })
+
+                const res1 = await requestPromises();
+                const res2 = await requestPromises();
+
+                expect(res1.status).toBe(400);
+                expect(res2.body.message).toContain('Only registered users can vote. Please login or signup to vote.');
             })
         })
     })

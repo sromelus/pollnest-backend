@@ -8,8 +8,7 @@ export const tryCatch = (handler: RequestHandler): RequestHandler => {
             if ((error as Error).name === 'ValidationError') {
                 res.status(400).send({
                     success: false,
-                    message: 'Validation failed',
-                    errors: (error as Error).message
+                    message: (error as Error).message,
                 });
 
                 return;

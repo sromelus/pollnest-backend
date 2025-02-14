@@ -31,6 +31,11 @@ describe('Poll Model', () => {
         expect(savedPoll.description).toEqual('Who do you think is going to win this election?');
         expect(savedPoll.messages).toHaveLength(2);
         expect(savedPoll.pollOptions).toHaveLength(2);
+        expect(savedPoll.active).toBe(true);
+        expect(savedPoll.public).toBe(false);
+        expect(savedPoll.allowMultipleVotes).toBe(true);
+        expect(savedPoll.startDate).toBeDefined();
+        expect(savedPoll.endDate).toBeDefined();
     });
 
     it('should create 2 new polls successfully', async () => {

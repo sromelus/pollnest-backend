@@ -16,7 +16,6 @@ interface IPoll extends Document {
 }
 
 
-
 export default class VoteController {
     static createVote: RequestHandler = tryCatch(async (req, res) => {
         // just need to create a vote, no need to check for auth

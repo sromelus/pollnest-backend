@@ -23,7 +23,8 @@ export const testPoll = (options: Partial<IPoll>): IPoll => {
         startDate: new Date(),
         endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
         active: true,
-        public: false
+        public: false,
+        allowMultipleVotes: true
     };
 
     const mergedOptions = { ...defaults, ...options };

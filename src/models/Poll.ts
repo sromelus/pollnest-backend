@@ -24,6 +24,7 @@ export interface IPoll extends Document {
     endDate: Date;
     active: boolean;
     public: boolean;
+    allowMultipleVotes: boolean;
 }
 
 const PollSchema = new Schema<IPoll>({
@@ -95,6 +96,10 @@ const PollSchema = new Schema<IPoll>({
             default: true
         },
         public: {
+            type: Schema.Types.Boolean,
+            default: false
+        },
+        allowMultipleVotes: {
             type: Schema.Types.Boolean,
             default: false
         }
