@@ -1,5 +1,5 @@
 import { splitFullName } from './formatName';
-import { generateToken, verifyToken, generateInviteToken } from './jwt';
+import { generateToken, verifyToken, generateInviteToken, generateShareToken } from './jwt';
 import { tryCatch } from './tryCatch';
 import { voterLocationInfo } from './voterLocationInfo';
 
@@ -9,5 +9,6 @@ export {
     verifyToken,
     tryCatch,
     voterLocationInfo,
-    generateInviteToken
+    generateInviteToken,
+    generateShareToken
 };

@@ -21,6 +21,14 @@ export function generateInviteToken(payload: { pollId: string; email: string; ty
     return jwt.sign(payload, secret, { expiresIn: payload.expiresIn || 1000 * 60 * 60 * 24 * 7 });
 }
 
+export function generateShareToken(payload: { pollId: string; referrerId: string }): string {
+    const secret = config.jwtSecret as Secret;
+    if (!secret) {
+        throw new Error('JWT_SECRET is not configured');
+    }
+    return jwt.sign(payload, secret);
+}
+
 export function verifyToken(token: string): string | jwt.JwtPayload {
     const secret = config.jwtSecret as Secret;
     if (!secret) {

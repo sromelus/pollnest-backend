@@ -39,7 +39,6 @@ describe('PollAccessController', () => {
         privatePoll = await testPoll({ public: false, allowMultipleVotes: false, creatorId: userId }).save();
     });
 
-
     describe('generatePollInvites', () => {
         it('should generate invite links for a list of emails', async () => {
             const emails = ['invite1@example.com', 'invite2@example.com'];
@@ -149,6 +148,51 @@ describe('PollAccessController', () => {
 
             expect(res.status).toBe(403);
             expect(res.body.message).toBe('Invalid or expired access token');
+        });
+    });
+
+    describe('sharePollWithFriend', () => {
+        let referrerToken: string;
+        let referrerId: Types.ObjectId;
+        let poll: IPoll;
+
+        beforeEach(async () => {
+            // Create referrer user
+            const adminId = userId;
+            const referrer = await testUser({ email: 'referrer@example.com', role: UserRole.User }).save();
+            referrerId = referrer.id;
+
+            referrerToken = generateToken(referrer.id);
+
+            // Create a poll for testing
+            poll = await testPoll({ creatorId: adminId }).save();
+        });
+
+        describe('Poll sharing System', () => {
+            it('should generate share link with referrer info in token', async () => {
+                const res = await request(app)
+                    .post(`/api/v1/polls/${poll.id}/share`)
+                    .set('Authorization', `Bearer ${referrerToken}`)
+
+                expect(res.status).toBe(200);
+                expect(res.body.message).toBe('Poll share link generated successfully');
+                expect(res.body.data).toHaveProperty('shareLink');
+            });
+
+            it('should navigate with share link', async () => {
+                const shareRes = await request(app)
+                    .post(`/api/v1/polls/${poll.id}/share`)
+                    .set('Authorization', `Bearer ${referrerToken}`)
+
+                const { shareToken } = shareRes.body.data;
+
+                const res = await request(app)
+                    .get(`/api/v1/polls/${shareToken}/share`);
+
+                expect(res.status).toBe(200);
+                expect(res.body.data).toHaveProperty('poll');
+                expect(res.header['set-cookie']).toBeDefined();
+            });
         });
     });
 });

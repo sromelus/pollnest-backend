@@ -32,8 +32,9 @@ router.post('/', auth(), validatePoll, PollController.createPoll);
 router.put('/:pollId', auth(), validatePollUpdate, PollController.updatePoll);
 router.delete('/:pollId', auth(), PollController.deletePoll);
 
+router.get('/:shareToken/share', PollAccessController.getSharePoll);
+router.post('/:pollId/share', auth(), PollAccessController.sharePoll);
 router.post('/:pollId/invites', auth(), PollAccessController.generatePollInvites);
 router.get('/access/:token', PollAccessController.accessPollWithToken);
-
 
 export default router;

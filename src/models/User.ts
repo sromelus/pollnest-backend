@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 import bcrypt from 'bcrypt';
 import Vote, { IVote } from './Vote';
 
@@ -17,6 +17,7 @@ export interface IUser extends Document {
     name: string;
     comparePassword(password: string): Promise<boolean>;
     userIp: string;
+    referrerId: Types.ObjectId;
     votes: () => Promise<IVote[]>;
     points: number;
     voteCount: number;
@@ -72,6 +73,10 @@ const UserSchema = new Schema<IUser>({
         },
         userIp: {
             type: Schema.Types.String,
+        },
+        referrerId: {
+            type: Schema.Types.ObjectId,
+            ref: 'User',
         },
         role: {
             type: Schema.Types.String,

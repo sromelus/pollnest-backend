@@ -1,12 +1,12 @@
 import { Request, Response, RequestHandler } from 'express';
 import { Poll, User, UserRole, IUser } from '../models';
-import { generateToken, verifyToken, generateInviteToken, tryCatch } from '../utils';
+import { generateShareToken, verifyToken, generateInviteToken, tryCatch } from '../utils';
 
 export class PollAccessController {
     static generatePollInvites: RequestHandler = tryCatch(async (req, res) => {
             const { pollId } = req.params;
             const { emails, expiresIn = 1000 * 60 * 60 * 24 * 7 } = req.body;
-            const { currentUserId} = (req as any);
+            const { currentUserId } = (req as any);
 
             // Verify poll exists and is private
             const poll = await Poll.findById(pollId);
@@ -82,5 +82,63 @@ export class PollAccessController {
                     poll: poll,
                 }
             });
+    })
+
+    static sharePoll: RequestHandler = tryCatch(async (req, res) => {
+        const { pollId } = req.params;
+        const { currentUserId } = (req as any);
+
+        const poll = await Poll.findById(pollId);
+        if (!poll) {
+            res.status(404).json({
+                success: false,
+                message: 'Poll not found'
+            });
+            return;
+        }
+
+        const token = generateShareToken({ pollId, referrerId: currentUserId });
+
+        res.status(200).json({
+            success: true,
+            message: 'Poll share link generated successfully',
+            data: {
+                shareToken: token,
+                shareLink: `${process.env.FRONTEND_URL}/polls/${token}`
+            }
+        });
+    })
+
+    static getSharePoll: RequestHandler = tryCatch(async (req, res) => {
+        const { shareToken } = req.params;
+
+        const decoded = verifyToken(shareToken);
+        if (typeof decoded === 'string' || !decoded.pollId) {
+            res.status(403).json({
+                success: false,
+                message: 'Invalid or expired access token'
+            });
+            return;
+        }
+
+        const poll = await Poll.findById(decoded.pollId);
+        if (!poll) {
+            res.status(404).json({
+                success: false,
+                message: 'Poll not found'
+            });
+            return;
+        }
+
+        res.cookie('referrerToken', shareToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Poll fetched successfully',
+            data: { poll }
+        });
     })
 }
