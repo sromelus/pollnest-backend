@@ -1,6 +1,6 @@
 import '../loadEnvironmentVariables';
 import { RequestHandler } from 'express';
-import { Poll, Vote, User } from '../models';
+import { Poll, Vote, User, IUser } from '../models';
 import { Document } from 'mongoose';
 import { tryCatch, voterLocationInfo } from '../utils';
 
@@ -23,8 +23,6 @@ export default class VoteController {
         // to be able to do
         // const updatedOption = await CastVote(req.body)
 
-        // console.log('auth', auth());
-
         const voterLocInfo = voterLocationInfo(req);
 
         const nonAuthVotes = await Vote.countDocuments({ voterIp: voterLocInfo.voterIp });
@@ -34,12 +32,21 @@ export default class VoteController {
         if (!user && nonAuthVotes >= 5) {
             res.status(403).send({
                 success: false,
-                message: 'You have reached the maximum number of votes. Please create an account to vote more.'
+                message: 'You have reached the maximum number of free votes. Please create an account to vote more.'
             });
             return;
         }
 
         const vote = await Vote.create({ ...req.body, ...voterLocInfo });
+
+        // check if the voter is a referred user
+        if (vote.voterId) {
+            const referredUser = await User.findById(vote.voterId) as IUser;
+
+            if (referredUser && referredUser.referrerId && referredUser.points == 0) {
+                await User.findByIdAndUpdate(referredUser.referrerId, { $inc: { referralPoints: 10 } });
+            }
+        }
 
         const poll = await Poll.findOneAndUpdate(
             {

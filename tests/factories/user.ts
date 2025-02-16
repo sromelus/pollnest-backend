@@ -6,7 +6,11 @@ export const testUser = (options: Partial<IUser>): IUser => {
             lastName: 'User',
             email: 'test@example.com',
             password: 'ValidPass123!',
-            role: UserRole.User
+            role: UserRole.User,
+            referralPoints: 0,
+            points: 0,
+            voteCount: 0,
+            referrerId: null
         }
 
         const mergedOptions = { ...defaults, ...options };

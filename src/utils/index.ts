@@ -1,11 +1,11 @@
 import { splitFullName } from './formatName';
-import { generateToken, verifyToken, generateInviteToken, generateShareToken } from './jwt';
+import { generateAuthToken, verifyToken, generateInviteToken, generateShareToken } from './jwt';
 import { tryCatch } from './tryCatch';
 import { voterLocationInfo } from './voterLocationInfo';
 
 export {
     splitFullName,
-    generateToken,
+    generateAuthToken,
     verifyToken,
     tryCatch,
     voterLocationInfo,

@@ -4,7 +4,8 @@ import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/dbTestConfig';
 import routes from "../../src/routes";
 import { testPoll, testUser } from "../factories";
 import { UserRole, IPoll, PollOptionType } from "../../src/models";
-import { Vote } from "../../src/models";
+import { Vote, User, IUser } from "../../src/models";
+import { generateAuthToken, verifyToken } from "../../src/utils";
 import { Types } from 'mongoose';
 
 beforeAll(async () => {
@@ -29,7 +30,7 @@ describe('Vote Controller', () => {
     let voterId: Types.ObjectId;
 
     beforeEach(async () => {
-        const user = testUser({ role: UserRole.Admin });
+        const user = testUser({ email: 'admin@example.com', role: UserRole.Admin });
         await user.save();
         const pollObj = testPoll({ creatorId: user.id, pollOptions: [{image: 'trump_img', pollOptionText: 'trump', count: 0}, {image: 'kamala_img', pollOptionText: 'kamala', count: 0}] });
         await pollObj.save();
@@ -37,7 +38,7 @@ describe('Vote Controller', () => {
         voterId = user.id;
 
         const loginRes = await request(app).post('/api/v1/auth/login').send({
-            email: testUser({}).email,
+            email: 'admin@example.com',
             password: testUser({}).password
         });
 
@@ -218,7 +219,7 @@ describe('Vote Controller', () => {
                 const voteCount = await Vote.countDocuments({ voterIp: '127.0.0.1' });
 
                 expect(res6.status).toBe(403);
-                expect(res6.body.message).toBe('You have reached the maximum number of votes. Please create an account to vote more.');
+                expect(res6.body.message).toBe('You have reached the maximum number of free votes. Please create an account to vote more.');
                 expect(voteCount).not.toBeGreaterThan(5);
             })
         })
@@ -431,4 +432,55 @@ describe('Vote Controller', () => {
             expect(res.body.data).not.toHaveProperty('voteCount');
         });
     });
+
+    describe('New user Vote from Referral', () => {
+        it('should award 10 points to referrer on referred user\'s first vote only', async () => {
+            // Generate referrer user
+            const referrer = await testUser({ email: 'referrer@example.com', role: UserRole.User }).save();
+            const referrerToken = generateAuthToken(referrer.id);
+
+            // Generate referrer create a share link token for the poll and share the link
+            const shareRes = await request(app)
+                .post(`/api/v1/polls/${poll.id}/share`)
+                .set('Authorization', `Bearer ${referrerToken}`)
+
+            const { shareToken } = shareRes.body.data;
+
+            // Referred user navigate to poll shared by referrer link
+            const shareLinkRes = await request(app)
+                .get(`/api/v1/polls/${shareToken}/share`);
+
+            // Get referral token from the cookie
+            const cookie = shareLinkRes.headers['set-cookie'][0];
+            const { referralToken } = cookie.match(/=(?<referralToken>.+?(?=;))/)?.groups || {};
+
+            const token = verifyToken(referralToken) as { referrerId: string };
+
+            // Referred user signup and create a new user with the referrerId
+            const referredUser = await testUser({ email: 'referreduser@example.com', role: UserRole.User, referrerId: new Types.ObjectId(token.referrerId) }).save();
+
+            // Referred user votes on the poll and the referrer gets 10 points
+            const voteResPromise = () => request(app)
+                .post(`/api/v1/polls/${poll.id}/votes`)
+                .set('Authorization', `Bearer ${shareToken}`)
+                .send({
+                    pollId: poll.id,
+                    voterId: referredUser.id,
+                    voterEthnicity: 'black',
+                    voterGender: 'male',
+                    voteOptionText: poll.pollOptions[1].pollOptionText,
+                    pollOptionId: poll.pollOptions[1]._id,
+                });
+
+            await voteResPromise();
+            const voteRes = await voteResPromise();
+
+            const updatedReferrer = await User.findById(referrer.id) as IUser;
+
+            expect(voteRes.status).toBe(201);
+            expect(referredUser.referrerId.toString()).toBe(referrer.id);
+            expect(updatedReferrer.referralPoints).toBe(referrer.referralPoints + 10);
+            expect(updatedReferrer.referralPoints).not.toBe(20);
+        });
+    })
 })

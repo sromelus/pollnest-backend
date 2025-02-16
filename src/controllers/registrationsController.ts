@@ -1,17 +1,26 @@
 import { RequestHandler } from 'express';
 import { User, Vote } from '../models'
-import { splitFullName, tryCatch, voterLocationInfo } from '../utils';
+import { splitFullName, tryCatch, voterLocationInfo, verifyToken } from '../utils';
+import { Types } from 'mongoose';
 
 export default class RegistrationsController {
     static signup: RequestHandler = tryCatch(async (req, res) => {
         const { name, email, password} = req.body;
         const { firstName, lastName } = splitFullName(name);
 
+        let referrerId = null;
+        if (req.cookies) {
+            const { referrerToken } = req.cookies;
+            const decoded = verifyToken(referrerToken) as { referrerId: string };
+            referrerId = decoded.referrerId ? new Types.ObjectId(decoded.referrerId) : null;
+        }
+
         const user = await User.create({
             firstName,
             lastName,
             email,
-            password
+            password,
+            referrerId
         });
 
         // Match new user with existing votes

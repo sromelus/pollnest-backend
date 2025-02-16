@@ -4,12 +4,12 @@ import { envConfig } from '../config/environment';
 
 const config = envConfig[process.env.NODE_ENV || 'development'];
 
-export function generateToken(userId: string): string {
+export function generateAuthToken(userId: string): string {
     const secret = config.jwtSecret as Secret;
     if (!secret) {
         throw new Error('JWT_SECRET is not configured');
     }
-    return jwt.sign({ currentUserId: userId }, secret, { expiresIn: '5m' });
+    return jwt.sign({ currentUserId: userId }, secret, { expiresIn: '1h' });
 }
 
 export function generateInviteToken(payload: { pollId: string; email: string; type: 'poll-invite'; expiresIn?: number }): string {
@@ -38,7 +38,7 @@ export function verifyToken(token: string): string | jwt.JwtPayload {
     try {
         return jwt.verify(token, secret);
     } catch (error) {
-        return { type: 'invalid' };
+        return {};
     }
 }
 

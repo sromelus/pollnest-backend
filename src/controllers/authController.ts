@@ -1,6 +1,6 @@
 import { RequestHandler } from 'express';
 import { User } from '../models';
-import { generateToken, tryCatch } from '../utils';
+import { generateAuthToken, tryCatch } from '../utils';
 
 export default class AuthController {
     static login: RequestHandler = tryCatch(async (req, res) => {
@@ -13,7 +13,14 @@ export default class AuthController {
             return;
         }
 
-        const token = generateToken(user.id);
+        const token = generateAuthToken(user.id);
+
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
+            sameSite: 'strict'
+        });
 
         res.json({ success: true, message: 'Login successful', data: { token } });
     });

@@ -2,7 +2,7 @@ import express from 'express';
 import request from 'supertest';
 import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/dbTestConfig';
 import routes from '../../src/routes';
-import { User, Vote, UserRole, IUser } from '../../src/models';
+import { User, UserRole, IUser } from '../../src/models';
 import { testVote, testPoll, testUser } from '../factories';
 
 beforeAll(async () => {

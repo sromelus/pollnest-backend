@@ -21,6 +21,7 @@ export interface IUser extends Document {
     votes: () => Promise<IVote[]>;
     points: number;
     voteCount: number;
+    referralPoints: number;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -77,6 +78,7 @@ const UserSchema = new Schema<IUser>({
         referrerId: {
             type: Schema.Types.ObjectId,
             ref: 'User',
+            default: null
         },
         role: {
             type: Schema.Types.String,
@@ -90,6 +92,11 @@ const UserSchema = new Schema<IUser>({
             min: 0
         },
         voteCount: {
+            type: Schema.Types.Number,
+            default: 0,
+            min: 0
+        },
+        referralPoints: {
             type: Schema.Types.Number,
             default: 0,
             min: 0

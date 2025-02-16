@@ -2,7 +2,7 @@ import express from 'express';
 import request from 'supertest';
 import { IPoll, User, UserRole } from '../../src/models';
 import { testUser, testPoll } from '../factories';
-import { generateToken, generateInviteToken } from '../../src/utils';
+import { generateAuthToken, generateInviteToken } from '../../src/utils';
 import routes from '../../src/routes';
 import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/dbTestConfig';
 import { Types } from 'mongoose';
@@ -33,7 +33,7 @@ describe('PollAccessController', () => {
         // Create test user
         const user = await testUser({ role: UserRole.Subscriber }).save();
         userId = user.id;
-        authToken = generateToken(userId.toString());
+        authToken = generateAuthToken(userId.toString());
 
         // Create a private poll
         privatePoll = await testPoll({ public: false, allowMultipleVotes: false, creatorId: userId }).save();
@@ -59,7 +59,7 @@ describe('PollAccessController', () => {
         it('should reject if user is not poll creator', async () => {
             // Create another user
             const anotherUser = await testUser({ email: 'another@example.com', role: UserRole.Subscriber }).save();
-            const anotherUserToken = generateToken(anotherUser.id.toString());
+            const anotherUserToken = generateAuthToken(anotherUser.id.toString());
 
             const res = await request(app)
                 .post(`/api/v1/polls/${privatePoll.id}/invites`)
@@ -73,7 +73,7 @@ describe('PollAccessController', () => {
         it('should allow admin to generate invite links', async () => {
             // Create another user
             const anotherUser = await testUser({ email: 'another@example.com', role: UserRole.Admin }).save();
-            const anotherUserToken = generateToken(anotherUser.id.toString());
+            const anotherUserToken = generateAuthToken(anotherUser.id.toString());
 
             const res = await request(app)
                 .post(`/api/v1/polls/${privatePoll.id}/invites`)
@@ -162,7 +162,7 @@ describe('PollAccessController', () => {
             const referrer = await testUser({ email: 'referrer@example.com', role: UserRole.User }).save();
             referrerId = referrer.id;
 
-            referrerToken = generateToken(referrer.id);
+            referrerToken = generateAuthToken(referrer.id);
 
             // Create a poll for testing
             poll = await testPoll({ creatorId: adminId }).save();
@@ -192,6 +192,14 @@ describe('PollAccessController', () => {
                 expect(res.status).toBe(200);
                 expect(res.body.data).toHaveProperty('poll');
                 expect(res.header['set-cookie']).toBeDefined();
+            });
+
+            it('should not navigate with share link if poll is not found', async () => {
+                const res = await request(app)
+                    .get(`/api/v1/polls/invalid-share-token/share`);
+
+                expect(res.status).toBe(403);
+                expect(res.body.message).toContain('Invalid or expired access token');
             });
         });
     });
