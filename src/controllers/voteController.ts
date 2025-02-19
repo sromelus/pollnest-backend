@@ -25,6 +25,7 @@ export default class VoteController {
 
         const voterLocInfo = voterLocationInfo(req);
 
+        // get all votes for the ip address
         const nonAuthVotes = await Vote.countDocuments({ voterIp: voterLocInfo.voterIp });
 
         const user = await User.exists({ _id: req.body.voterId });

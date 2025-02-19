@@ -5,6 +5,7 @@ import authRoutes from './authRoutes';
 import pollRoutes from './pollRoutes';
 import voteRoutes from './voteRoutes';
 import chatRoutes from './chatRoutes';
+import pollAccessRoutes from './pollAccessRoutes';
 
 const router = Router();
 
@@ -24,6 +25,10 @@ const defaultRoutes = [
     {
         path: '/polls',
         route: pollRoutes
+    },
+    {
+        path: '/poll_access',
+        route: pollAccessRoutes
     },
     {
         path: '/polls/:pollId/votes',

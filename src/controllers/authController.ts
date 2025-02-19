@@ -13,7 +13,7 @@ export default class AuthController {
             return;
         }
 
-        const token = generateAuthToken(user.id);
+        const token = await generateAuthToken(user.id);
 
         res.cookie('token', token, {
             httpOnly: true,

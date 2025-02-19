@@ -3,7 +3,7 @@ import request from 'supertest';
 import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/dbTestConfig';
 import { testPoll, testUser } from "../factories";
 import routes from '../../src/routes';
-import { UserRole } from '../../src/models/User';
+import { UserRole } from '../../src/models';
 import { Types } from 'mongoose';
 
 beforeAll(async () => {
@@ -28,13 +28,11 @@ describe('Poll Controller', () => {
     let creatorId: Types.ObjectId;
 
     beforeEach(async () => {
-        const user = testUser({});
-        user.role = UserRole.Admin;
-        await user.save();
-        creatorId = user._id as Types.ObjectId;
+        const userAdmin = await testUser({ role: UserRole.Admin }).save();
+        creatorId = userAdmin._id as Types.ObjectId;
 
         const loginRes = await request(app).post('/api/v1/auth/login').send({
-            email: testUser({}).email,
+            email: userAdmin.email,
             password: testUser({}).password
         });
 
@@ -42,28 +40,105 @@ describe('Poll Controller', () => {
     });
 
     describe('Get Polls', () => {
-        it('should get a poll', async () => {
-            const poll1 = testPoll({ creatorId });
-            const poll2 = testPoll({ creatorId });
-            await poll1.save();
-            await poll2.save();
+        it('should only show public polls non-admin users', async () => {
+            await testPoll({ creatorId, public: true }).save();
+            await testPoll({ creatorId, public: false }).save();
+            const poll2 = await testPoll({ creatorId, public: true }).save();
+
             const res = await request(app).get(`/api/v1/polls`);
 
             expect(res.status).toBe(200);
             expect(res.body.message).toBe('Polls fetched successfully');
+            //order descending - the latest poll should be first
+            expect(res.body.data.polls[0]._id.toString()).toEqual((poll2._id as Types.ObjectId).toString());
             expect(res.body.data.polls).toHaveLength(2);
+        });
+
+        it('should not show private polls', async () => {
+            await testPoll({ creatorId, public: false }).save();
+
+            const res = await request(app).get(`/api/v1/polls`);
+
+            expect(res.status).toBe(200);
+            expect(res.body.data.polls).toHaveLength(0);
+        });
+
+        it('should private and public polls if user is admin', async () => {
+            const userAdmin = await testUser({ email: 'admin@example.com', role: UserRole.Admin }).save();
+            const loginRes = await request(app).post('/api/v1/auth/login').send({
+                email: userAdmin.email,
+                password: testUser({}).password
+            });
+
+            await testPoll({ creatorId, public: true }).save();
+            await testPoll({ creatorId, public: false }).save();
+            await testPoll({ creatorId, public: false }).save();
+
+            const res = await request(app)
+                .get(`/api/v1/polls`)
+                .set('Authorization', `Bearer ${loginRes.body.data.token}`);
+
+            expect(res.status).toBe(200);
+            expect(res.body.data.polls).toHaveLength(3);
         });
     });
 
     describe('Get Poll', () => {
-        it('should get a poll', async () => {
-            const poll = testPoll({ creatorId });
+        it('should show public poll', async () => {
+            const poll = testPoll({ creatorId, public: true });
             await poll.save();
             const res = await request(app).get(`/api/v1/polls/${poll.id}`);
 
             expect(res.status).toBe(200);
             expect(res.body.message).toBe('Poll fetched successfully');
             expect(res.body.data.poll.title).toBe(poll.title);
+        });
+
+        it('should show private poll if user is creator', async () => {
+            const poll = await testPoll({ creatorId, public: false }).save();
+            const res = await request(app)
+                .get(`/api/v1/polls/${poll.id}`)
+                .set('Authorization', `Bearer ${authToken}`);
+
+            expect(res.status).toBe(200);
+            expect(res.body.message).toBe('Poll fetched successfully');
+            expect(res.body.data.poll.title).toBe(poll.title);
+        });
+
+        it('should show private poll if user is admin', async () => {
+            const userAdmin = await testUser({ email: 'admin@example.com', role: UserRole.Admin }).save();
+            const loginRes = await request(app).post('/api/v1/auth/login').send({
+                email: userAdmin.email,
+                password: testUser({}).password
+            });
+
+            const userSubscriber = await testUser({ email: 'subscriber@example.com', role: UserRole.Subscriber }).save();
+
+            const poll = await testPoll({ creatorId: userSubscriber.id, public: false }).save();
+            const res = await request(app)
+                .get(`/api/v1/polls/${poll.id}`)
+                .set('Authorization', `Bearer ${loginRes.body.data.token}`);
+
+            expect(res.status).toBe(200);
+            expect(res.body.message).toBe('Poll fetched successfully');
+            expect(res.body.data.poll.title).toBe(poll.title);
+        });
+
+        it('should not show private poll if user is not creator or admin', async () => {
+            const userSubscriber = await testUser({ email: 'subscriber@example.com', role: UserRole.Subscriber }).save();
+
+            const loginRes = await request(app).post('/api/v1/auth/login').send({
+                email: userSubscriber.email,
+                password: testUser({}).password
+            });
+
+            const poll = await testPoll({ creatorId, public: false }).save();
+            const res = await request(app)
+                .get(`/api/v1/polls/${poll.id}`)
+                .set('Authorization', `Bearer ${loginRes.body.data.token}`);
+
+            expect(res.status).toBe(403);
+            expect(res.body.message).toBe('Poll is not public');
         });
 
         it('should not get a poll with an invalid id', async () => {

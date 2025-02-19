@@ -3,32 +3,36 @@ import { verifyToken } from "../utils";
 
 export const auth = ({ required = true }: { required?: boolean } = {}) => {
   return (req: Request, res: Response, next: NextFunction) => {
-        if (!required) {
+        const token = req.headers['authorization']?.split(' ')[1];
+
+        if (!required && !token) {
+            (req as any).currentUserId = null;
+            (req as any).role = null;
+
             next();
             return;
         }
 
         try {
-            const token = req.headers['authorization']?.split(' ')[1];
-
             if (!token) {
-                res.status(401).send({ message: 'Unauthorized' });
+                res.status(401).send({ success: false, message: 'Unauthorized' });
                 return;
             }
 
             const decoded = verifyToken(token);
 
-            if (!decoded || typeof decoded !== 'object' || !('currentUserId' in decoded)) {
-                res.status(401).send({ message: 'Unauthorized' });
+            if (!decoded || typeof decoded !== 'object') {
+                res.status(401).send({ success: false, message: 'Unauthorized' });
                 return;
             }
 
             (req as any).currentUserId = decoded.currentUserId;
+            (req as any).role = decoded.role;
 
             next();
         } catch (error) {
             res.status(401).send({ success: false, message: 'Unauthorized', errors: (error as Error).message});
             return;
         }
-    }
+   }
 }

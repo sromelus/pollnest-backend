@@ -1,8 +1,40 @@
-import { Request, Response, RequestHandler } from 'express';
+import { RequestHandler } from 'express';
 import { Poll, User, UserRole, IUser } from '../models';
 import { generateShareToken, verifyToken, generateInviteToken, tryCatch } from '../utils';
 
 export class PollAccessController {
+    static getPolls: RequestHandler = tryCatch(async (req, res) => {
+        const { currentUserId } = (req as any);
+
+        const polls = await Poll.find({ creatorId: currentUserId }).sort({ createdAt: -1 });
+
+        res.status(200).json({ success: true, message: 'Polls fetched successfully', data: { polls } });
+    });
+
+    static getPoll: RequestHandler = tryCatch(async (req, res) => {
+        const { pollId } = req.params;
+        const { currentUserId, role } = (req as any);
+
+        if (role !== UserRole.Subscriber) {
+            res.status(403).json({ success: false, message: 'You are not authorized to access this poll' });
+            return;
+        }
+
+        const poll = await Poll.findById(pollId);
+
+        if (!poll) {
+            res.status(404).json({ success: false, message: 'Poll not found' });
+            return;
+        }
+
+        if (poll.creatorId.toString() !== currentUserId && (await User.findById(currentUserId) as IUser).role !== UserRole.Admin) {
+            res.status(403).json({ success: false, message: 'You are not authorized to access this poll' });
+            return;
+        }
+
+        res.status(200).json({ success: true, message: 'Poll fetched successfully', data: { poll } });
+    });
+
     static generatePollInvites: RequestHandler = tryCatch(async (req, res) => {
             const { pollId } = req.params;
             const { emails, expiresIn = 1000 * 60 * 60 * 24 * 7 } = req.body;
@@ -58,6 +90,7 @@ export class PollAccessController {
 
             // Verify token
             const decoded = verifyToken(token);
+
             if (typeof decoded === 'string' || decoded.type !== 'poll-invite') {
                 res.status(403).json({
                     success: false,

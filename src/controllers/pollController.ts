@@ -1,10 +1,17 @@
 import { RequestHandler } from 'express';
-import { Poll, IPoll } from '../models';
+import { Poll, IPoll, UserRole } from '../models';
 import { tryCatch } from '../utils';
 
 export default class PollController {
     static getPolls: RequestHandler = tryCatch(async (req, res) => {
-        const polls = await Poll.find();
+        const { currentUserId, role } = req as any;
+
+        let polls;
+        if (role === UserRole.Admin) {
+            polls = await Poll.find().sort({ createdAt: -1 });
+        } else {
+            polls = await Poll.find({ public: true }).sort({ createdAt: -1 });
+        }
 
         res.status(200).json({ success: true, message: 'Polls fetched successfully', data: { polls } });
     });
@@ -29,14 +36,30 @@ export default class PollController {
 
     static getPoll: RequestHandler = tryCatch(async (req, res) => {
         const { pollId } = req.params;
-        const poll = await Poll.findById(pollId)
+        const poll = await Poll.findById(pollId);
 
         if (!poll) {
             res.status(404).json({ success: false, message: 'Poll not found' });
             return;
         }
 
-        res.status(200).json({ success: true, message: 'Poll fetched successfully', data: { poll } });
+        // Public polls are accessible to everyone
+        if (poll.public) {
+            res.status(200).json({ success: true, message: 'Poll fetched successfully', data: { poll } });
+            return;
+        }
+
+        // For private polls, check if user is creator or admin
+        if (poll.creatorId.toString() === (req as any).currentUserId || (req as any).role === UserRole.Admin) {
+            res.status(200).json({ success: true, message: 'Poll fetched successfully', data: { poll } });
+            return;
+        }
+
+        // If none of the above conditions are met, return unauthorized
+        res.status(403).json({
+            success: false,
+            message: 'Poll is not public'
+        });
     });
 
     static createPoll: RequestHandler = tryCatch(async (req, res) => {

@@ -25,11 +25,11 @@ const messageLimiter = rateLimit({
 
 // router.get('/', getVotesLimiter, registrationController.signUp);
 
-router.get('/', auth({ required: false }), PollController.getPolls);
-router.get('/:pollId', auth({ required: false }), PollController.getPoll);
-router.get('/:pollId/options', PollController.getPollOptions);
-router.post('/', auth(), validatePoll, PollController.createPoll);
-router.put('/:pollId', auth(), validatePollUpdate, PollController.updatePoll);
-router.delete('/:pollId', auth(), PollController.deletePoll);
+router.get('/my_polls', auth(), PollAccessController.getPolls);
+router.get('/my_polls/:pollId', auth(), PollAccessController.getPoll);
+router.get('/:shareToken/share', PollAccessController.getSharePoll);
+router.post('/:pollId/share', auth(), PollAccessController.sharePoll);
+router.post('/:pollId/invites', auth(), PollAccessController.generatePollInvites);
+router.get('/access/:token', PollAccessController.accessPollWithToken);
 
 export default router;

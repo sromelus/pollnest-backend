@@ -1,15 +1,18 @@
 import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 import { envConfig } from '../config/environment';
+import { User, IUser } from '../models';
 // import { blacklist } from '../services/blacklist';
 
 const config = envConfig[process.env.NODE_ENV || 'development'];
 
-export function generateAuthToken(userId: string): string {
+export async function generateAuthToken(userId: string) {
     const secret = config.jwtSecret as Secret;
     if (!secret) {
         throw new Error('JWT_SECRET is not configured');
     }
-    return jwt.sign({ currentUserId: userId }, secret, { expiresIn: '1h' });
+    const user = await User.findById(userId).select('role') as IUser;
+
+    return jwt.sign({ currentUserId: userId, role: user.role}, secret, { expiresIn: '1h' });
 }
 
 export function generateInviteToken(payload: { pollId: string; email: string; type: 'poll-invite'; expiresIn?: number }): string {
@@ -18,7 +21,7 @@ export function generateInviteToken(payload: { pollId: string; email: string; ty
         throw new Error('JWT_SECRET is not configured');
     }
 
-    return jwt.sign(payload, secret, { expiresIn: payload.expiresIn || 1000 * 60 * 60 * 24 * 7 });
+    return jwt.sign(payload, secret, { expiresIn: payload.expiresIn || '7d' });
 }
 
 export function generateShareToken(payload: { pollId: string; referrerId: string }): string {
@@ -29,7 +32,7 @@ export function generateShareToken(payload: { pollId: string; referrerId: string
     return jwt.sign(payload, secret);
 }
 
-export function verifyToken(token: string): string | jwt.JwtPayload {
+export function verifyToken(token: string) {
     const secret = config.jwtSecret as Secret;
     if (!secret) {
         throw new Error('JWT_SECRET is not configured');
