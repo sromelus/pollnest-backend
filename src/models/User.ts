@@ -22,6 +22,9 @@ export interface IUser extends Document {
     points: number;
     voteCount: number;
     referralPoints: number;
+    phone: string;
+    verified: boolean;
+    verificationCode: string;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -30,7 +33,7 @@ const UserSchema = new Schema<IUser>({
             trim: true,
             required: true,
             minLength: [2, 'First name must be at least 2 characters long'],
-            maxLength: [30, 'First name cannot exceed 30 characters']
+            maxLength: [30, 'First name cannot exceed 30 characters'],
         },
         lastName: {
             type: Schema.Types.String,
@@ -100,6 +103,23 @@ const UserSchema = new Schema<IUser>({
             type: Schema.Types.Number,
             default: 0,
             min: 0
+        },
+        phone: {
+            type: Schema.Types.String,
+            required: false,
+            maxLength: [16, 'Phone number cannot be more than 16 characters'],
+            unique: true,
+            trim: true,
+        },
+        verified: {
+            type: Schema.Types.Boolean,
+            default: false
+        },
+        verificationCode: {
+            type: Schema.Types.String,
+            required: false,
+            trim: true,
+            default: null
         }
     },
     {

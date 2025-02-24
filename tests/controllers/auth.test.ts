@@ -2,7 +2,8 @@ import request from "supertest";
 import express from "express";
 import routes from "../../src/routes";
 import { dbConnect, dbDisconnect, dropDatabase } from "../helpers/dbTestConfig";
-import { testUser } from "../factories";
+import { User, IUser, UserRole } from "../../src/models";
+import { testUser, testPoll, testVote } from "../factories";
 
 beforeAll(async () => {
     await dbConnect();
@@ -24,11 +25,11 @@ app.use('/api/v1', routes);
 
 describe('Auth Controller', () => {
     beforeEach(async () => {
-        const user = testUser({email: "john@example.com", password: "ValidPass123!"});
+        const user = testUser({email: "john@example.com", password: "ValidPass123!", verified: true});
         await user.save();
     });
 
-    describe('Login', () => {
+    describe('.login', () => {
         it('should login user successfully', async () => {
             const res = await request(app).post('/api/v1/auth/login').send({
                 email: 'john@example.com',
@@ -50,7 +51,7 @@ describe('Auth Controller', () => {
         });
     });
 
-    describe('Logout', () => {
+    describe('.logout', () => {
         it('should logout user successfully', async () => {
             const loginRes = await request(app).post('/api/v1/auth/login').send({
                 email: 'john@example.com',
@@ -63,6 +64,326 @@ describe('Auth Controller', () => {
 
             expect(logoutRes.status).toBe(200);
             expect(logoutRes.body).toHaveProperty('message', 'Logout successful');
+        });
+    });
+
+    describe('.preRegister', () => {
+      it('should create a temporary user successfully', async () => {
+        const tempUser = { email: 'new-user@example.com', phone: '1112223333' };
+        const res = await request(app).post('/api/v1/auth/pre-register').send({
+          email: tempUser.email,
+        });
+
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.message).toBe('Temporary user created successfully');
+        expect(res.body.data.user).toHaveProperty('email', tempUser.email);
+        expect(res.body.data.user).not.toHaveProperty('password');
+        expect(res.body.data.user).not.toHaveProperty('verificationCode');
+
+        const user = await User.findOne({ email: tempUser.email }) as IUser;
+        expect(user).toBeDefined();
+        expect(user.firstName).toBe('New');
+        expect(user.lastName).toBe('User');
+        expect(user.email).toBe(tempUser.email);
+        expect(user.verified).toBe(false);
+        expect(user.verificationCode).toBeDefined();
+        expect(user.verificationCode).toHaveLength(6);
+      });
+
+      it('should update existing unverified temporary user when email already exists', async () => {
+        const tempUser = { email: 'new-user@example.com', phone: '1112223333' };
+
+        // create existing temporary user
+        await request(app).post('/api/v1/auth/pre-register').send({
+            email: tempUser.email,
+        });
+
+        // create new temporary user with same email
+        const res = await request(app).post('/api/v1/auth/pre-register').send({
+            email: tempUser.email,
+        });
+
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.message).toBe('Temporary user created successfully');
+        expect(res.body.data.user).toHaveProperty('email', 'new-user@example.com');
+        expect(res.body.data.user).not.toHaveProperty('password');
+        expect(res.body.data.user).not.toHaveProperty('verificationCode');
+
+        const user = await User.findOne({ email: tempUser.email }) as IUser;
+        expect(user).toBeDefined();
+        expect(user.firstName).toBe('New');
+        expect(user.lastName).toBe('User');
+        expect(user.email).toBe(tempUser.email);
+        expect(user.verified).toBe(false);
+        expect(user.verificationCode).toBeDefined();
+        expect(user.verificationCode).toHaveLength(6);
+      });
+
+      it('it should fail when email exists and is already verified', async () => {
+        const tempUser = { email: 'new-user@example.com', phone: '1112223333' };
+
+        await testUser({ email: tempUser.email, verified: true }).save();
+
+        const res = await request(app).post('/api/v1/auth/pre-register').send({
+          email: tempUser.email,
+        });
+
+        expect(res.status).toBe(400);
+        expect(res.body.message).toContain('Email already exists');
+      });
+
+      it('should fail when email is invalid', async () => {
+        const res = await request(app).post('/api/v1/auth/pre-register').send({
+          email: 'invalid-email',
+        });
+
+        expect(res.status).toBe(400);
+        expect(res.body.message).toContain('Invalid email');
+      });
+    });
+
+    describe('.register', () => {
+      it('should register a new user successfully', async () => {
+        const tempUser = { email: 'john1@example.com', phone: '1112223333' };
+
+        await request(app).post('/api/v1/auth/pre-register').send({
+          email: tempUser.email,
+        });
+
+        const user1 = await User.findOne({ email: tempUser.email, verified: false }) as IUser;
+        const user2 = await User.findOne({ email: tempUser.email, verified: false, verificationCode: user1.verificationCode }) as IUser;
+
+        const res = await request(app).post('/api/v1/auth/register').send({
+          name: 'John Doe',
+          email: user2.email,
+          password: 'ValidPass123!',
+          verificationCode: user2.verificationCode
+        });
+
+        expect(res.status).toBe(201);
+        expect(res.body.message).toBe('User created successfully');
+        expect(res.body.data.user).toHaveProperty('name', 'John Doe');
+        expect(res.body.data.user).toHaveProperty('email', 'john1@example.com');
+        expect(res.body.data.user).not.toHaveProperty('password');
+
+        const user = await User.findOne({ email: tempUser.email }) as IUser;
+        expect(user).toBeDefined();
+        expect(user.verified).toBe(true);
+        expect(user.verificationCode).toBeNull();
+      });
+
+      it('should fail when verification code is invalid', async () => {
+        const res = await request(app).post('/api/v1/auth/register').send({
+          name: 'John Doe',
+          email: 'john1@example.com',
+          password: 'ValidPass123!',
+          verificationCode: '123456'
+        });
+
+        expect(res.status).toBe(400);
+        expect(res.body.message).toBe('Invalid email or verification code');
+      });
+
+      it('should fail when email is invalid', async () => {
+        const tempUser = { email: 'john1@example.com', phone: '1112223333' };
+
+        await request(app).post('/api/v1/auth/pre-register').send({
+          email: tempUser.email,
+        });
+
+        const user1 = await User.findOne({ email: tempUser.email, verified: false }) as IUser;
+        const user2 = await User.findOne({ email: tempUser.email, verified: false, verificationCode: user1.verificationCode }) as IUser;
+
+        const res = await request(app).post('/api/v1/auth/register').send({
+          name: 'John Doe',
+          email: 'invalid-email',
+          password: 'ValidPass123!',
+          verificationCode: user2.verificationCode
+        });
+
+        expect(res.status).toBe(400);
+        expect(res.body.message).toContain('Invalid email');
+      });
+
+      it('should fail when password is too short', async () => {
+        const tempUser = { email: 'john1@example.com', phone: '1112223333' };
+
+        await request(app).post('/api/v1/auth/pre-register').send({
+          email: tempUser.email,
+        });
+
+        const user1 = await User.findOne({ email: tempUser.email, verified: false }) as IUser;
+        const user2 = await User.findOne({ email: tempUser.email, verified: false, verificationCode: user1.verificationCode }) as IUser;
+
+        const res = await request(app).post('/api/v1/auth/register').send({
+          name: 'John Doe',
+          email: user2.email,
+          password: '123!',
+          verificationCode: user2.verificationCode
+        });
+
+        expect(res.status).toBe(400);
+        expect(res.body.message).toContain('Password must be at least 8 characters long');
+      });
+
+      it('should fail when name is missing', async () => {
+        const tempUser = { email: 'john1@example.com', phone: '1112223333' };
+
+        await request(app).post('/api/v1/auth/pre-register').send({
+          email: tempUser.email,
+        });
+
+        const user1 = await User.findOne({ email: tempUser.email, verified: false }) as IUser;
+        const user2 = await User.findOne({ email: tempUser.email, verified: false, verificationCode: user1.verificationCode }) as IUser;
+
+        const res = await request(app).post('/api/v1/auth/register').send({
+          email: user2.email,
+          password: 'ValidPass123!',
+          verificationCode: user2.verificationCode
+        });
+
+        expect(res.status).toBe(400);
+        expect(res.body.message).toContain('firstName: Path `firstName` is required.');
+      });
+
+      it('should fail when name is too long', async () => {
+        const tempUser = { email: 'john1@example.com', phone: '1112223333' };
+
+        await request(app).post('/api/v1/auth/pre-register').send({
+            email: tempUser.email,
+        });
+
+        const user1 = await User.findOne({ email: tempUser.email, verified: false }) as IUser;
+        const user2 = await User.findOne({ email: tempUser.email, verified: false, verificationCode: user1.verificationCode }) as IUser;
+
+        const res = await request(app).post('/api/v1/auth/register').send({
+            name: 'JohnDipatinoJonsoRomeroTwoCompute Doe JohnDipatinoJonsoRomeroTwoCompute',
+            email: user2.email,
+            password: 'ValidPass123!',
+            verificationCode: user2.verificationCode
+        });
+
+        expect(res.status).toBe(400);
+        expect(res.body.message).toContain('lastName: Last name cannot exceed 30 characters, firstName: First name cannot exceed 30 characters');
+      });
+
+      it('should not store password in plain text', async () => {
+        const tempUser = { email: 'john1@example.com', phone: '1112223333' };
+
+        await request(app).post('/api/v1/auth/pre-register').send({
+          email: tempUser.email,
+        });
+
+        const user1 = await User.findOne({ email: tempUser.email, verified: false }) as IUser;
+        const user2 = await User.findOne({ email: tempUser.email, verified: false, verificationCode: user1.verificationCode }) as IUser;
+
+        const res = await request(app).post('/api/v1/auth/register').send({
+          name: 'John Doe',
+          email: user2.email,
+          password: 'ValidPass123!',
+          verificationCode: user2.verificationCode
+        });
+
+        expect(res.status).toBe(201);
+        const user = await User.findOne({ email: 'john@example.com' });
+        expect(user?.password).not.toBe('ValidPass123!');
+      });
+
+      it('should match new user with existing votes by ip', async () => {
+          // Create admin user and poll
+          const admin = await testUser({ role: UserRole.Admin }).save();
+          const poll = await testPoll({ creatorId: admin.id }).save();
+          const pollOptionId = poll.pollOptions[0]._id;
+
+          // Create non-auth user with ip address
+          const nonAuthUser = { ip: '127.0.0.1' };
+
+          // non-auth user votes 3 times on the poll
+          await testVote({ voterIp: nonAuthUser.ip, voterId: undefined, pollId: poll.id, pollOptionId }).save();
+          await testVote({ voterIp: nonAuthUser.ip, voterId: undefined, pollId: poll.id, pollOptionId }).save();
+          await testVote({ voterIp: nonAuthUser.ip, voterId: undefined, pollId: poll.id, pollOptionId }).save();
+
+          // non-auth user creates new account
+          const tempUser = { email: 'john1@example.com', ip: '127.0.0.1'};
+
+          await request(app).post('/api/v1/auth/pre-register').send({
+            email: tempUser.email,
+          });
+
+          const user1 = await User.findOne({ email: tempUser.email, verified: false }) as IUser;
+          const user2 = await User.findOne({ email: tempUser.email, verified: false, verificationCode: user1.verificationCode }) as IUser;
+
+          // non-auth user registers new account
+          const res = await request(app).post('/api/v1/auth/register').send({
+            name: 'New User',
+            email: user2.email,
+            password: 'ValidPass123!',
+            verificationCode: user2.verificationCode
+          });
+
+          // get new user and their votes if any
+          const newUser = await User.findById(res.body.data.user.id) as IUser;
+          const votes = await newUser.votes();
+
+          expect(res.status).toBe(201);
+          expect(newUser).toBeDefined();
+          expect(votes).toHaveLength(3);
+      });
+    });
+
+    describe('.updateProfile', () => {
+        beforeEach(async () => {
+          await User.create({
+            firstName: 'John',
+            lastName: 'Doe',
+            email: 'john1@example.com',
+            password: 'ValidPass123!',
+            verified: true
+          });
+        });
+
+        it('should update user successfully', async () => {
+          const loginRes = await request(app).post('/api/v1/auth/login').send({
+            email: 'john1@example.com',
+            password: 'ValidPass123!'
+          });
+
+          const token = loginRes.body.data.token;
+
+          const res = await request(app).put('/api/v1/auth/profile').set('Authorization', `Bearer ${token}`).send({
+            name: 'John Doe Updated',
+          });
+
+          expect(res.status).toBe(200);
+          expect(res.body).toHaveProperty('message', 'User updated successfully');
+        });
+    });
+
+    describe('.deleteProfile', () => {
+        beforeEach(async () => {
+          await User.create({
+            firstName: 'John',
+            lastName: 'Doe',
+            email: 'john1@example.com',
+            password: 'ValidPass123!',
+            verified: true
+          });
+        });
+
+        it('should delete user successfully', async () => {
+          const loginRes = await request(app).post('/api/v1/auth/login').send({
+            email: 'john1@example.com',
+            password: 'ValidPass123!'
+          });
+
+          const token = loginRes.body.data.token;
+
+          const res = await request(app).delete('/api/v1/auth/profile').set('Authorization', `Bearer ${token}`)
+
+          expect(res.status).toBe(200);
+          expect(res.body).toHaveProperty('message', 'User deleted successfully');
         });
     });
 });
