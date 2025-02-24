@@ -3,7 +3,7 @@ import { User } from '../models'
 import { splitFullName, tryCatch } from '../utils';
 
 export default class UsersController {
-    static getUsers: RequestHandler = tryCatch(async (req, res) => {
+    static listUsers: RequestHandler = tryCatch(async (req, res) => {
         const users = await User.find();
 
         res.status(200).send({ success: true, message: 'Users fetched successfully', data: { users } });
@@ -23,7 +23,7 @@ export default class UsersController {
     });
 
     static createUser: RequestHandler = tryCatch(async (req, res) => {
-        const { name, email, password, role } = req.body;
+        const { name, email, password, role, verified } = req.body;
         const { firstName, lastName } = splitFullName(name);
 
         const user = await User.create({
@@ -31,10 +31,22 @@ export default class UsersController {
             lastName,
             email,
             password,
-            role
+            role,
+            verified
         });
 
-        res.status(201).send({ success: true, message: 'User created successfully', data: { user: { id: user.id, name: user.name, email: user.email, role: user.role } } });
+        res.status(201).send({
+            success: true, message: 'User created successfully',
+            data: {
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role,
+                    verified: user.verified
+                }
+            }
+        });
     });
 
     static updateUser: RequestHandler = tryCatch(async (req, res) => {

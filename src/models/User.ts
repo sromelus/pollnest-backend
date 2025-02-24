@@ -108,7 +108,6 @@ const UserSchema = new Schema<IUser>({
             type: Schema.Types.String,
             required: false,
             maxLength: [16, 'Phone number cannot be more than 16 characters'],
-            unique: true,
             trim: true,
         },
         verified: {

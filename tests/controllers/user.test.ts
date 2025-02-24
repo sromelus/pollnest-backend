@@ -21,7 +21,7 @@ const app = express();
 app.use(express.json());
 app.use('/api/v1', routes);
 
-describe('User Management', () => {
+describe('User Controller', () => {
     let authToken: string;
     let userId: string;
 
@@ -31,7 +31,8 @@ describe('User Management', () => {
             firstName: 'John',
             lastName: 'Doe',
             email: 'john@example.com',
-            password: 'ValidPass123!'
+            password: 'ValidPass123!',
+            verified: true
         });
 
         const loginRes = await request(app).post('/api/v1/auth/login').send({
@@ -43,20 +44,7 @@ describe('User Management', () => {
         authToken = loginRes.body.data.token;
     });
 
-    describe('Get User', () => {
-        it('should get user profile successfully', async () => {
-            const res = await request(app)
-                .get(`/api/v1/users/${userId}`)
-                .set('Authorization', `Bearer ${authToken}`);
-
-            expect(res.status).toBe(200);
-            expect(res.body.message).toBe('User fetched successfully');
-            expect(res.body.data.user).toHaveProperty('name', 'John Doe');
-            expect(res.body.data.user).toHaveProperty('email', 'john@example.com');
-        });
-    });
-
-    describe('Get Users', () => {
+    describe('.listUsers', () => {
         it('should get all users successfully', async () => {
             const res = await request(app)
                 .get('/api/v1/users')
@@ -69,7 +57,20 @@ describe('User Management', () => {
         });
     });
 
-    describe('Create User', () => {
+    describe('.getUser', () => {
+        it('should get user profile successfully', async () => {
+            const res = await request(app)
+                .get(`/api/v1/users/${userId}`)
+                .set('Authorization', `Bearer ${authToken}`);
+
+            expect(res.status).toBe(200);
+            expect(res.body.message).toBe('User fetched successfully');
+            expect(res.body.data.user).toHaveProperty('name', 'John Doe');
+            expect(res.body.data.user).toHaveProperty('email', 'john@example.com');
+        });
+    });
+
+    describe('.createUser', () => {
         it('should create a new user successfully', async () => {
             const res = await request(app)
                 .post('/api/v1/users')
@@ -77,13 +78,18 @@ describe('User Management', () => {
                 .send({
                     name: 'Jane Doe',
                     email: 'jane@example.com',
-                    password: 'ValidPass123!'
+                    password: 'ValidPass123!',
+                    role: 'user',
+                    verified: true
                 });
+
+            console.log(res.body);
 
             expect(res.status).toBe(201);
             expect(res.body.message).toBe('User created successfully');
             expect(res.body.data.user).toHaveProperty('name', 'Jane Doe');
             expect(res.body.data.user).toHaveProperty('email', 'jane@example.com');
+            expect(res.body.data.user).toHaveProperty('verified', true);
         });
 
         it('should create a new user with role successfully', async () => {
@@ -105,7 +111,7 @@ describe('User Management', () => {
         });
     });
 
-    describe('Update User', () => {
+    describe('.updateUser', () => {
         it('should update user profile successfully', async () => {
             const res = await request(app)
                 .put(`/api/v1/users/${userId}`)
@@ -134,7 +140,7 @@ describe('User Management', () => {
         });
     });
 
-    describe('Delete User', () => {
+    describe('.deleteUser', () => {
         it('should delete user successfully', async () => {
             const res = await request(app)
                 .delete(`/api/v1/users/${userId}`)
