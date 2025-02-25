@@ -1,9 +1,11 @@
 import { Router } from 'express';
-import { PollController, PollAccessController } from '../controllers';
+import { PollsController, PollAccessController, ChatController, VotesController } from '../controllers';
 import rateLimit from 'express-rate-limit';
-import { validatePoll, validatePollUpdate } from '../validations';
+import { validatePoll, validatePollUpdate, validateVote, validateCreateChatMessage } from '../validations';
 import { auth } from '../middlewares';
 const router = Router();
+
+
 
 const getVotesLimiter = rateLimit({
     // windowMs: 2 * 60 * 1000,
@@ -25,11 +27,28 @@ const messageLimiter = rateLimit({
 
 // router.get('/', getVotesLimiter, registrationController.signUp);
 
-router.get('/', auth({ required: false }), PollController.getPolls);
-router.get('/:pollId', auth({ required: false }), PollController.getPoll);
-router.get('/:pollId/options', PollController.getPollOptions);
-router.post('/', auth(), validatePoll, PollController.createPoll);
-router.put('/:pollId', auth(), validatePollUpdate, PollController.updatePoll);
-router.delete('/:pollId', auth(), PollController.deletePoll);
+
+// Poll access and sharing routes
+router.get('/my_polls', auth(), PollAccessController.listPolls);
+router.get('/my_polls/:pollId', auth(), PollAccessController.getPoll);
+router.get('/access/:token', PollAccessController.accessPollWithToken);
+router.get('/:shareToken/access', PollAccessController.getSharedPoll);
+router.post('/:pollId/create_share_link', auth(), PollAccessController.createShareLink);
+router.post('/:pollId/invites', auth(), PollAccessController.generatePollInvites);
+
+// Votes routes
+router.post('/:pollId/votes', auth({ required: false }), validateVote, VotesController.createVote);
+
+// Chat routes
+router.post('/:pollId/chat/message', auth(), validateCreateChatMessage, ChatController.createChatMessage);
+router.get('/:pollId/chat', auth({ required: false }), ChatController.getChat);
+
+// Poll routes
+router.get('/', auth({ required: false }), PollsController.listPolls);
+router.post('/', auth(), validatePoll, PollsController.createPoll);
+router.get('/:pollId', auth({ required: false }), PollsController.getPoll);
+router.get('/:pollId/options', auth({ required: false }), PollsController.getPollOptions);
+router.put('/:pollId', auth(), validatePollUpdate, PollsController.updatePoll);
+router.delete('/:pollId', auth(), PollsController.deletePoll);
 
 export default router;

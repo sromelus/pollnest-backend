@@ -5,6 +5,7 @@ import { tryCatch } from '../utils';
 export default class ChatController {
     static getChat: RequestHandler = tryCatch(async (req, res) => {
         const { pollId } = req.params;
+
         const poll = await Poll.findById(pollId);
 
         if (!poll) {

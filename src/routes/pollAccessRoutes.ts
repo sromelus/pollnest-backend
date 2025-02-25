@@ -1,9 +1,11 @@
 import { Router } from 'express';
-import { PollController, PollAccessController } from '../controllers';
+import { PollsController, PollAccessController } from '../controllers';
 import rateLimit from 'express-rate-limit';
 import { validatePoll, validatePollUpdate } from '../validations';
 import { auth } from '../middlewares';
 const router = Router();
+
+
 
 const getVotesLimiter = rateLimit({
     // windowMs: 2 * 60 * 1000,
@@ -25,11 +27,11 @@ const messageLimiter = rateLimit({
 
 // router.get('/', getVotesLimiter, registrationController.signUp);
 
-router.get('/my_polls', auth(), PollAccessController.getPolls);
-router.get('/my_polls/:pollId', auth(), PollAccessController.getPoll);
-router.get('/:shareToken/share', PollAccessController.getSharePoll);
-router.post('/:pollId/share', auth(), PollAccessController.sharePoll);
-router.post('/:pollId/invites', auth(), PollAccessController.generatePollInvites);
-router.get('/access/:token', PollAccessController.accessPollWithToken);
+// router.get('/my_polls', auth(), PollAccessController.listPolls);
+// router.get('/my_polls/:pollId', auth(), PollAccessController.getPoll);
+// router.get('/:shareToken/share', PollAccessController.getSharePoll);
+// router.post('/:pollId/share', auth(), PollAccessController.sharePoll);
+// router.post('/:pollId/invites', auth(), PollAccessController.generatePollInvites);
+// router.get('/access/:token', PollAccessController.accessPollWithToken);
 
 export default router;

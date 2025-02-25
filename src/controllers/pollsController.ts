@@ -2,8 +2,8 @@ import { RequestHandler } from 'express';
 import { Poll, IPoll, UserRole } from '../models';
 import { tryCatch } from '../utils';
 
-export default class PollController {
-    static getPolls: RequestHandler = tryCatch(async (req, res) => {
+export default class PollsController {
+    static listPolls: RequestHandler = tryCatch(async (req, res) => {
         const { currentUserId, role } = req as any;
 
         let polls;

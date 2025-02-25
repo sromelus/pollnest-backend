@@ -30,7 +30,7 @@ describe('Vote Controller', () => {
     let voterId: Types.ObjectId;
 
     beforeEach(async () => {
-        const user = testUser({ email: 'admin@example.com', role: UserRole.Admin });
+        const user = testUser({ email: 'admin@example.com', role: UserRole.Admin, verified: true });
         await user.save();
         const pollObj = testPoll({ creatorId: user.id, pollOptions: [{image: 'trump_img', pollOptionText: 'trump', count: 0}, {image: 'kamala_img', pollOptionText: 'kamala', count: 0}], public: true });
         await pollObj.save();
@@ -45,7 +45,7 @@ describe('Vote Controller', () => {
         authToken = loginRes.body.data.token;
     });
 
-    describe('Create Vote', () => {
+    describe('.createVote', () => {
         describe('With an existing user', () => {
             it('should be able to create a vote', async () => {
                 // Get the poll option directly from the saved poll document
@@ -434,21 +434,21 @@ describe('Vote Controller', () => {
     });
 
     describe('New user Vote on a public poll from a referral link', () => {
-        it('should award 10 points to referrer on referred user\'s first vote only', async () => {
+        it("should award 10 points to the referrer when the referred user vote the first time", async () => {
             // Generate referrer user
-            const referrer = await testUser({ email: 'referrer@example.com', role: UserRole.User }).save();
+            const referrer = await testUser({ email: 'referrer@example.com', role: UserRole.User, verified: true }).save();
             const referrerToken = await generateAuthToken(referrer.id);
 
             // Generate referrer create a share link token for the poll and share the link
             const shareRes = await request(app)
-                .post(`/api/v1/poll_access/${poll.id}/share`)
+                .post(`/api/v1/polls/${poll.id}/create_share_link`)
                 .set('Authorization', `Bearer ${referrerToken}`)
 
             const { shareToken } = shareRes.body.data;
 
             // Referred user navigate to poll shared by referrer link
             const shareLinkRes = await request(app)
-                .get(`/api/v1/poll_access/${shareToken}/share`);
+                .get(`/api/v1/polls/${shareToken}/access`);
 
             // Get referral token from the cookie
             const cookie = shareLinkRes.headers['set-cookie'][0];
@@ -457,7 +457,7 @@ describe('Vote Controller', () => {
             const token = verifyToken(referralToken) as { referrerId: string };
 
             // Referred user signup with the referrerId
-            const referredUser = await testUser({ email: 'referreduser@example.com', role: UserRole.User, referrerId: new Types.ObjectId(token.referrerId) }).save();
+            const referredUser = await testUser({ email: 'referreduser@example.com', role: UserRole.User, referrerId: new Types.ObjectId(token.referrerId), verified: true }).save();
 
             // Referred user votes on the poll and the referrer gets 10 points
             const voteResPromise = () => request(app)
@@ -484,13 +484,13 @@ describe('Vote Controller', () => {
         });
     })
 
-    describe('Any user Vote on a private poll from a referral link', () => {
+    describe('User with referral link vote on a private poll', () => {
         it('should be able to vote on poll successfully', async () => {
             // Allow authenticated user to generate invite links for a list of emails to access a private poll
             const emails = ['invite1@example.com', 'invite2@example.com'];
 
             const res = await request(app)
-                .post(`/api/v1/poll_access/${poll.id}/invites`)
+                .post(`/api/v1/polls/${poll.id}/invites`)
                 .set('Authorization', `Bearer ${authToken}`)
                 .send({ emails, expiresIn: 1000 * 60 });
 
@@ -501,25 +501,19 @@ describe('Vote Controller', () => {
             expect(res.body.data.invites[0]).toHaveProperty('accessToken');
             expect(res.body.data.invites[0]).toHaveProperty('accessLink');
 
-
-            // Allow user who has access link to vote on private poll
-            // Do not allow user to vote if access link is expired
-
-
-            //TBD..................
-            const referrer = await testUser({ email: 'referrer@example.com', role: UserRole.User }).save();
+            const referrer = await testUser({ email: 'referrer@example.com', role: UserRole.User, verified: true }).save();
             const referrerToken = await generateAuthToken(referrer.id);
 
             // Generate referrer create a share link token for the poll and share the link
             const shareRes = await request(app)
-                .post(`/api/v1/poll_access/${poll.id}/share`)
+                .post(`/api/v1/polls/${poll.id}/create_share_link`)
                 .set('Authorization', `Bearer ${referrerToken}`)
 
             const { shareToken } = shareRes.body.data;
 
             // Referred user navigate to poll shared by referrer link
             const shareLinkRes = await request(app)
-                .get(`/api/v1/poll_access/${shareToken}/share`);
+                .get(`/api/v1/polls/${shareToken}/access`);
 
             // Get referral token from the cookie
             const cookie = shareLinkRes.headers['set-cookie'][0];
@@ -528,7 +522,7 @@ describe('Vote Controller', () => {
             const token = verifyToken(referralToken) as { referrerId: string };
 
             // Referred user signup and create a new user with the referrerId
-            const referredUser = await testUser({ email: 'referreduser@example.com', role: UserRole.User, referrerId: new Types.ObjectId(token.referrerId) }).save();
+            const referredUser = await testUser({ email: 'referreduser@example.com', role: UserRole.User, referrerId: new Types.ObjectId(token.referrerId), verified: true }).save();
 
             // Referred user votes on the poll and the referrer gets 10 points
             const voteResPromise = () => request(app)

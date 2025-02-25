@@ -1,15 +1,15 @@
-import voteController from './voteController'
+import VotesController from './votesController'
 import UsersController from './usersController'
 import AuthController from './authController'
-import PollController from './pollController'
+import PollsController from './pollsController'
 import ChatController from './chatController'
 import { PollAccessController } from './pollAccessController'
 
 export {
     UsersController,
     AuthController,
-    PollController,
-    voteController,
+    PollsController,
+    VotesController,
     ChatController,
     PollAccessController
 }

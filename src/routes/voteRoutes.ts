@@ -1,5 +1,5 @@
 import { RequestHandler, Router } from 'express';
-import { voteController } from '../controllers';
+import { VotesController } from '../controllers';
 import rateLimit from 'express-rate-limit';
 import { validateVote } from '../validations';
 import { auth} from '../middlewares';
@@ -28,7 +28,7 @@ const voteLimiter = rateLimit({
 // router.get('/chat', getVotesLimiter, getChatMessages);
 // router.post('/chat', messageLimiter, validateMessage, postMessage as RequestHandler);
 
-router.post('/', auth({ required: false }), validateVote, voteController.createVote);
+// router.post('/', auth({ required: false }), validateVote, VotesController.createVote);
 
 
 export default router;

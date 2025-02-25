@@ -5,6 +5,7 @@ import { testPoll, testUser } from "../factories";
 import routes from '../../src/routes';
 import { UserRole, IPoll } from '../../src/models';
 import { Types } from 'mongoose';
+import { generateAuthToken } from '../../src/utils';
 
 beforeAll(async () => {
     await dbConnect();
@@ -26,14 +27,14 @@ app.use('/api/v1', routes)
 describe('Chat Controller', () => {
     let userId: Types.ObjectId;
     let userId2: Types.ObjectId;
+    let token: string;
 
     beforeEach(async () => {
-        const user = testUser({});
+        const user = await testUser({ email: 'admin@example.com', role: UserRole.Admin, verified: true }).save();
         const user2 = testUser({});
-        user.role = UserRole.Admin;
-        await user.save();
         userId = user.id;
         userId2 = user2.id;
+        token = await generateAuthToken(user.id);
     });
 
     describe('Poll Chat', () => {
@@ -41,8 +42,7 @@ describe('Chat Controller', () => {
         let poll: IPoll;
 
         beforeEach(async () => {
-            poll = testPoll({ creatorId: userId });
-            await poll.save();
+            poll = await testPoll({ creatorId: userId }).save();
             pollId = poll.id;
         });
 
@@ -50,6 +50,7 @@ describe('Chat Controller', () => {
             const res = await request(app).get(`/api/v1/polls/${pollId}/chat`);
 
             expect(res.status).toBe(200);
+            expect(res.body.message).toBe('Poll chat fetched successfully');
             expect(res.body.data.messages).toHaveLength(poll.messages.length);
         });
     });
@@ -59,18 +60,21 @@ describe('Chat Controller', () => {
         let poll: IPoll;
 
         beforeEach(async () => {
-            poll = testPoll({ creatorId: userId });
-            await poll.save();
+            poll = await testPoll({ creatorId: userId }).save();
             pollId = poll.id;
         });
 
         it('should add a new message to a poll chat', async () => {
             const messagePromises = [
-                request(app).post(`/api/v1/polls/${pollId}/chat/message`).send({
+                request(app).post(`/api/v1/polls/${pollId}/chat/message`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
                     content: 'This is a test message',
                     userId: userId,
                 }),
-                request(app).post(`/api/v1/polls/${pollId}/chat/message`).send({
+                request(app).post(`/api/v1/polls/${pollId}/chat/message`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
                     content: 'This is a test message 2',
                     userId: userId2,
                 })

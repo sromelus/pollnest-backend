@@ -83,8 +83,6 @@ describe('User Controller', () => {
                     verified: true
                 });
 
-            console.log(res.body);
-
             expect(res.status).toBe(201);
             expect(res.body.message).toBe('User created successfully');
             expect(res.body.data.user).toHaveProperty('name', 'Jane Doe');

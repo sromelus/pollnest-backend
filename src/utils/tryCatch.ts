@@ -15,8 +15,8 @@ export const tryCatch = (handler: RequestHandler): RequestHandler => {
 
             res.status(500).send({
                 success: false,
-                message: 'Internal server error',
-                errors: (error as Error).message
+                message: `Internal server error: ${(error as any).message}`,
+                errors: (error as any).errors
             });
         }
     };

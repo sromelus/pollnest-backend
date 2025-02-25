@@ -3,7 +3,7 @@ import { Poll, User, UserRole, IUser } from '../models';
 import { generateShareToken, verifyToken, generateInviteToken, tryCatch } from '../utils';
 
 export class PollAccessController {
-    static getPolls: RequestHandler = tryCatch(async (req, res) => {
+    static listPolls: RequestHandler = tryCatch(async (req, res) => {
         const { currentUserId } = (req as any);
 
         const polls = await Poll.find({ creatorId: currentUserId }).sort({ createdAt: -1 });
@@ -117,7 +117,7 @@ export class PollAccessController {
             });
     })
 
-    static sharePoll: RequestHandler = tryCatch(async (req, res) => {
+    static createShareLink: RequestHandler = tryCatch(async (req, res) => {
         const { pollId } = req.params;
         const { currentUserId } = (req as any);
 
@@ -142,7 +142,7 @@ export class PollAccessController {
         });
     })
 
-    static getSharePoll: RequestHandler = tryCatch(async (req, res) => {
+    static getSharedPoll: RequestHandler = tryCatch(async (req, res) => {
         const { shareToken } = req.params;
 
         const decoded = verifyToken(shareToken);

@@ -28,7 +28,7 @@ describe('Poll Controller', () => {
     let creatorId: Types.ObjectId;
 
     beforeEach(async () => {
-        const userAdmin = await testUser({ role: UserRole.Admin }).save();
+        const userAdmin = await testUser({ role: UserRole.Admin, verified: true }).save();
         creatorId = userAdmin._id as Types.ObjectId;
 
         const loginRes = await request(app).post('/api/v1/auth/login').send({
@@ -39,8 +39,8 @@ describe('Poll Controller', () => {
         authToken = loginRes.body.data.token;
     });
 
-    describe('Get Polls', () => {
-        it('should only show public polls non-admin users', async () => {
+    describe('.listPolls', () => {
+        it('should only list public polls to non-admin users', async () => {
             await testPoll({ creatorId, public: true }).save();
             await testPoll({ creatorId, public: false }).save();
             const poll2 = await testPoll({ creatorId, public: true }).save();
@@ -54,7 +54,7 @@ describe('Poll Controller', () => {
             expect(res.body.data.polls).toHaveLength(2);
         });
 
-        it('should not show private polls', async () => {
+        it('should not list private polls', async () => {
             await testPoll({ creatorId, public: false }).save();
 
             const res = await request(app).get(`/api/v1/polls`);
@@ -63,8 +63,8 @@ describe('Poll Controller', () => {
             expect(res.body.data.polls).toHaveLength(0);
         });
 
-        it('should private and public polls if user is admin', async () => {
-            const userAdmin = await testUser({ email: 'admin@example.com', role: UserRole.Admin }).save();
+        it('should list private and public polls if user is admin', async () => {
+            const userAdmin = await testUser({ email: 'admin@example.com', role: UserRole.Admin, verified: true }).save();
             const loginRes = await request(app).post('/api/v1/auth/login').send({
                 email: userAdmin.email,
                 password: testUser({}).password
@@ -83,7 +83,7 @@ describe('Poll Controller', () => {
         });
     });
 
-    describe('Get Poll', () => {
+    describe('.getPoll', () => {
         it('should show public poll', async () => {
             const poll = testPoll({ creatorId, public: true });
             await poll.save();
@@ -95,7 +95,7 @@ describe('Poll Controller', () => {
         });
 
         it('should show private poll if user is creator', async () => {
-            const poll = await testPoll({ creatorId, public: false }).save();
+            const poll = await testPoll({ creatorId, public: false}).save();
             const res = await request(app)
                 .get(`/api/v1/polls/${poll.id}`)
                 .set('Authorization', `Bearer ${authToken}`);
@@ -106,7 +106,7 @@ describe('Poll Controller', () => {
         });
 
         it('should show private poll if user is admin', async () => {
-            const userAdmin = await testUser({ email: 'admin@example.com', role: UserRole.Admin }).save();
+            const userAdmin = await testUser({ email: 'admin@example.com', role: UserRole.Admin, verified: true }).save();
             const loginRes = await request(app).post('/api/v1/auth/login').send({
                 email: userAdmin.email,
                 password: testUser({}).password
@@ -125,7 +125,7 @@ describe('Poll Controller', () => {
         });
 
         it('should not show private poll if user is not creator or admin', async () => {
-            const userSubscriber = await testUser({ email: 'subscriber@example.com', role: UserRole.Subscriber }).save();
+            const userSubscriber = await testUser({ email: 'subscriber@example.com', role: UserRole.Subscriber, verified: true }).save();
 
             const loginRes = await request(app).post('/api/v1/auth/login').send({
                 email: userSubscriber.email,
@@ -150,7 +150,7 @@ describe('Poll Controller', () => {
         });
     });
 
-    describe('Get Poll Options', () => {
+    describe('.getPollOptions', () => {
         it('should get poll options', async () => {
             const poll = testPoll({ creatorId });
             await poll.save();
@@ -162,7 +162,7 @@ describe('Poll Controller', () => {
         });
     });
 
-    describe('Create Poll', () => {
+    describe('.createPoll', () => {
         it('should create a poll', async () => {
             const res = await request(app).post('/api/v1/polls').set('Authorization', `Bearer ${authToken}`).send({
                 title: 'Test Poll',
@@ -192,7 +192,7 @@ describe('Poll Controller', () => {
         });
     });
 
-    describe('Update Poll', () => {
+    describe('.updatePoll', () => {
         let pollId: string;
 
         beforeEach(async () => {
@@ -214,7 +214,7 @@ describe('Poll Controller', () => {
         });
     });
 
-    describe('Delete Poll', () => {
+    describe('.deletePoll', () => {
         let pollId: string;
 
         beforeEach(async () => {
