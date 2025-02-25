@@ -1,4 +1,4 @@
-import { RequestHandler } from 'express';
+import { RequestHandler, Response } from 'express';
 import { User, Vote, IUser } from '../models';
 import {
     generateAuthToken,
@@ -14,21 +14,14 @@ export default class AuthController {
     static login: RequestHandler = tryCatch(async (req, res) => {
         const { email, password } = req.body;
 
-        const user = await User.findOne({ email, verified: true }).select('+password');
-
-        if (!user || !await user.comparePassword(password)){
+        const user = await AuthController.validateCredentials(email, password);
+        if (!user) {
             res.status(401).send({success: false, message: 'Invalid credentials'})
             return;
         }
 
         const token = await generateAuthToken(user.id);
-
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
-            sameSite: 'strict'
-        });
+        AuthController.setAuthCookie(res, token);
 
         res.json({ success: true, message: 'Login successful', data: { token } });
     });
@@ -41,42 +34,22 @@ export default class AuthController {
 
     static preRegister: RequestHandler = tryCatch(async (req, res) => {
         const { email } = req.body;
-
         const existingUser = await User.findOne({ email });
 
-        if (existingUser && existingUser.verified) {
+        if (existingUser?.verified) {
             res.status(400).send({ success: false, message: 'Email already exists' });
             return;
         }
 
-        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const verificationCode = AuthController.generateVerificationCode();
+        const user = await AuthController.createTemporaryUser(email, verificationCode);
+        await AuthController.sendVerificationEmail(user, verificationCode);
 
-        const user = await User.findOneAndUpdate({ email }, {
-            firstName: 'New',
-            lastName: 'User',
-            email,
-            password: 'ValidPass123!',
-            phone: '1112223333',
-            verified: false,
-            verificationCode
-        }, { upsert: true, new: true }).select({ email: 1, _id: 0 });
-
-
-        // Send verification code to user's email
-        const options: EmailOptions = {
-            to: (user as IUser).email,
-            subject: 'Verify your email',
-            html: `<p>Your verification code is ${verificationCode}</p>
-                   <p>Please use this code in the registration form to continue the signup process.</p>`
-        };
-
-        if (process.env.NODE_ENV == 'production') {
-            await sendEmail(options);
-        } else {
-            console.log('options', options);
-        }
-
-        res.status(200).send({ success: true, message: 'Temporary user created successfully', data: { user } });
+        res.status(200).send({
+            success: true,
+            message: 'Temporary user created successfully',
+            data: { user }
+        });
     });
 
     static register: RequestHandler = tryCatch(async (req, res) => {
@@ -157,4 +130,57 @@ export default class AuthController {
         await user.deleteOne();
         res.status(200).send({ success: true, message: 'User deleted successfully' });
     });
+
+    // Private methods
+    private static async validateCredentials(email: string, password: string): Promise<IUser | null> {
+        const user = await User.findOne({ email, verified: true }).select('+password');
+        if (!user || !await user.comparePassword(password)) {
+            return null;
+        }
+        return user;
+    }
+
+    private static setAuthCookie(res: Response, token: string): void {
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
+            sameSite: 'strict'
+        });
+    }
+
+    private static generateVerificationCode(): string {
+        return Math.floor(100000 + Math.random() * 900000).toString();
+    }
+
+    private static async createTemporaryUser(email: string, verificationCode: string): Promise<IUser> {
+        return await User.findOneAndUpdate(
+            { email },
+            {
+                firstName: 'New',
+                lastName: 'User',
+                email,
+                password: 'ValidPass123!',
+                phone: '1112223333',
+                verified: false,
+                verificationCode
+            },
+            { upsert: true, new: true }
+        ).select({ email: 1, _id: 0 });
+    }
+
+    private static async sendVerificationEmail(user: IUser, verificationCode: string): Promise<void> {
+        const options: EmailOptions = {
+            to: user.email,
+            subject: 'Verify your email',
+            html: `<p>Your verification code is ${verificationCode}</p>
+                   <p>Please use this code in the registration form to continue the signup process.</p>`
+        };
+
+        if (process.env.NODE_ENV === 'production') {
+            await sendEmail(options);
+        } else {
+            console.log('options', options);
+        }
+    }
 }
