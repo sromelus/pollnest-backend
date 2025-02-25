@@ -70,7 +70,11 @@ export default class AuthController {
                    <p>Please use this code in the registration form to continue the signup process.</p>`
         };
 
-        // await sendEmail(options);
+        if (process.env.NODE_ENV == 'production') {
+            await sendEmail(options);
+        } else {
+            console.log('options', options);
+        }
 
         res.status(200).send({ success: true, message: 'Temporary user created successfully', data: { user } });
     });
