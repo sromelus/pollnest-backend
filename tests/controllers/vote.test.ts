@@ -448,7 +448,7 @@ describe('Vote Controller', () => {
 
             // Referred user navigate to poll shared by referrer link
             const shareLinkRes = await request(app)
-                .get(`/api/v1/polls/${shareToken}/access`);
+                .get(`/api/v1/polls/access/${shareToken}`);
 
             // Get referral token from the cookie
             const cookie = shareLinkRes.headers['set-cookie'][0];
@@ -513,7 +513,7 @@ describe('Vote Controller', () => {
 
             // Referred user navigate to poll shared by referrer link
             const shareLinkRes = await request(app)
-                .get(`/api/v1/polls/${shareToken}/access`);
+                .get(`/api/v1/polls/access/${shareToken}`);
 
             // Get referral token from the cookie
             const cookie = shareLinkRes.headers['set-cookie'][0];

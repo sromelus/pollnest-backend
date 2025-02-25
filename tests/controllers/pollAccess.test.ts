@@ -165,7 +165,7 @@ describe('PollAccessController', () => {
 
             // Try accessing with the token
             const res = await request(app)
-                .get(`/api/v1/polls/access/${accessToken}`);
+                .get(`/api/v1/polls/private_poll_access/${accessToken}`);
 
             expect(res.status).toBe(200);
             expect(res.body.data.poll.pollOptions).toHaveLength(2);
@@ -176,7 +176,7 @@ describe('PollAccessController', () => {
 
         it('should reject access to poll with invalid tokens', async () => {
             const res = await request(app)
-                .get('/api/v1/polls/access/invalid.token.123');
+                .get('/api/v1/polls/private_poll_access/invalid.token.123');
 
             expect(res.status).toBe(403);
             expect(res.body.message).toBe('Invalid or expired access token');
@@ -191,7 +191,7 @@ describe('PollAccessController', () => {
             });
 
             const res = await request(app)
-                .get(`/api/v1/polls/access/${token}`);
+                .get(`/api/v1/polls/private_poll_access/${token}`);
 
             expect(res.status).toBe(404);
             expect(res.body.message).toBe('Poll not found');
@@ -200,7 +200,7 @@ describe('PollAccessController', () => {
         it('should reject access to poll with tokens with wrong type', async () => {
             // Use an invalid token directly instead of generating one with wrong type
             const res = await request(app)
-                .get(`/api/v1/polls/access/invalid.token.here`);
+                .get(`/api/v1/polls/private_poll_access/invalid.token.here`);
 
             expect(res.status).toBe(403);
             expect(res.body.message).toBe('Invalid or expired access token');
@@ -216,7 +216,7 @@ describe('PollAccessController', () => {
             const { accessToken } = inviteRes.body.data.invites[0];
 
             const res = await request(app)
-                .get(`/api/v1/polls/access/${accessToken}`);
+                .get(`/api/v1/polls/private_poll_access/${accessToken}`);
 
             expect(res.status).toBe(403);
             expect(res.body.message).toBe('Invalid or expired access token');
@@ -277,7 +277,7 @@ describe('PollAccessController', () => {
                 const { shareToken } = shareRes.body.data;
 
                 const res = await request(app)
-                    .get(`/api/v1/polls/${shareToken}/access`);
+                    .get(`/api/v1/polls/access/${shareToken}`);
 
                 expect(res.status).toBe(200);
                 expect(res.body.data).toHaveProperty('poll');
@@ -286,7 +286,7 @@ describe('PollAccessController', () => {
 
             it('should not allow new user to navigate to a share link of a non-existent poll', async () => {
                 const res = await request(app)
-                    .get(`/api/v1/polls/invalid-share-token/access`);
+                    .get(`/api/v1/polls/access/invalid-share-token`);
 
                 expect(res.status).toBe(403);
                 expect(res.body.message).toContain('Invalid or expired access token');

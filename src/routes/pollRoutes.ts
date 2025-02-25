@@ -31,8 +31,8 @@ const messageLimiter = rateLimit({
 // Poll access and sharing routes
 router.get('/my_polls', auth(), PollAccessController.listPolls);
 router.get('/my_polls/:pollId', auth(), PollAccessController.getPoll);
-router.get('/access/:token', PollAccessController.accessPollWithToken);
-router.get('/:shareToken/access', PollAccessController.getSharedPoll);
+router.get('/private_poll_access/:token', PollAccessController.accessPollWithToken);
+router.get('/access/:shareToken', PollAccessController.getSharedPrivatePoll);
 router.post('/:pollId/create_share_link', auth(), PollAccessController.createShareLink);
 router.post('/:pollId/invites', auth(), PollAccessController.generatePollInvites);
 

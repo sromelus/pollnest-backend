@@ -142,7 +142,7 @@ export class PollAccessController {
         });
     })
 
-    static getSharedPoll: RequestHandler = tryCatch(async (req, res) => {
+    static getSharedPrivatePoll: RequestHandler = tryCatch(async (req, res) => {
         const { shareToken } = req.params;
 
         const decoded = verifyToken(shareToken);
