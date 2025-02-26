@@ -37,12 +37,12 @@ export default class AuthController {
         const existingUser = await User.findOne({ email });
 
         if (existingUser?.verified) {
-            res.status(400).send({ success: false, message: 'Email already exists' });
+            res.status(400).send({ success: false, message: 'Email already exists or user is not verified' });
             return;
         }
 
         const verificationCode = AuthController.generateVerificationCode();
-        const user = await AuthController.createTemporaryUser(email, verificationCode);
+        const user = await AuthController.createOrUpdateTemporaryUser(email, verificationCode);
         await AuthController.sendVerificationEmail(user, verificationCode);
 
         res.status(200).send({
@@ -153,7 +153,7 @@ export default class AuthController {
         return Math.floor(100000 + Math.random() * 900000).toString();
     }
 
-    private static async createTemporaryUser(email: string, verificationCode: string): Promise<IUser> {
+    private static async createOrUpdateTemporaryUser(email: string, verificationCode: string): Promise<IUser> {
         return await User.findOneAndUpdate(
             { email },
             {
