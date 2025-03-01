@@ -1,8 +1,9 @@
 import { RequestHandler } from 'express';
 import { Poll, User, UserRole, IUser } from '../models';
-import { generateShareToken, verifyToken, generateInviteToken, tryCatch } from '../utils';
+import AuthController from './authController';
+import { generatePublicPollShareToken, verifyToken, generatePrivatePollInviteToken, tryCatch, JwtTokenType } from '../utils';
 
-export class PollAccessController {
+export default class PollAccessController {
     static listPolls: RequestHandler = tryCatch(async (req, res) => {
         const { currentUserId } = (req as any);
 
@@ -35,7 +36,7 @@ export class PollAccessController {
         res.status(200).json({ success: true, message: 'Poll fetched successfully', data: { poll } });
     });
 
-    static generatePollInvites: RequestHandler = tryCatch(async (req, res) => {
+    static createPrivatePollInvites: RequestHandler = tryCatch(async (req, res) => {
             const { pollId } = req.params;
             const { emails, expiresIn = 1000 * 60 * 60 * 24 * 7 } = req.body;
             const { currentUserId } = (req as any);
@@ -50,7 +51,7 @@ export class PollAccessController {
                 return;
             }
 
-            // Verify user is poll creator or admin
+            // Verify user is the poll creator or admin
             if (poll.creatorId.toString() !== currentUserId && (await User.findById(currentUserId) as IUser).role !== UserRole.Admin) {
                 res.status(403).json({
                     success: false,
@@ -60,38 +61,40 @@ export class PollAccessController {
             }
 
             // Generate tokens for each email
-            const invites = emails.map((email: string) => {
-                const token = generateInviteToken({
+            const inviteData = await Promise.all(emails.map(async (email: string) => {
+                await AuthController.preRegisterUserWithEmail(email, null);
+                // Generate token for user
+                const token = generatePrivatePollInviteToken({
                     pollId: poll.id,
                     email,
-                    type: 'poll-invite',
+                    type: 'private-poll-invite',
                     expiresIn
                 });
 
                 return {
                     email,
-                    accessToken: token,
-                    accessLink: `${process.env.FRONTEND_URL}/poll/${token}`,
+                    inviteAccessToken: token,
+                    inviteAccessLink: `${process.env.FRONTEND_URL}/poll/${token}`,
                     expiresIn
                 };
-            });
+            }));
 
             res.status(200).json({
                 success: true,
                 message: 'Poll invites generated successfully',
                 data: {
-                    invites
+                    invites: inviteData
                 }
             });
     });
 
-    static accessPollWithToken: RequestHandler = tryCatch(async (req, res) => {
-            const { token } = req.params;
+    static accessPrivatePollWithToken: RequestHandler = tryCatch(async (req, res) => {
+            const { accessToken } = req.params;
 
-            // Verify token
-            const decoded = verifyToken(token);
+            // Verify accessToken
+            const { decoded, error } = verifyToken(accessToken) as JwtTokenType;
 
-            if (typeof decoded === 'string' || decoded.type !== 'poll-invite') {
+            if (error || typeof decoded === 'string' || decoded?.type !== 'private-poll-invite') {
                 res.status(403).json({
                     success: false,
                     message: 'Invalid or expired access token'
@@ -100,7 +103,7 @@ export class PollAccessController {
             }
 
             // Get poll
-            const poll = await Poll.findById(decoded.pollId);
+            const poll = await Poll.findById(decoded?.pollId);
             if (!poll) {
                 res.status(404).json({
                     success: false,
@@ -117,7 +120,7 @@ export class PollAccessController {
             });
     })
 
-    static createShareLink: RequestHandler = tryCatch(async (req, res) => {
+    static createPublicPollShareLink: RequestHandler = tryCatch(async (req, res) => {
         const { pollId } = req.params;
         const { currentUserId } = (req as any);
 
@@ -130,7 +133,7 @@ export class PollAccessController {
             return;
         }
 
-        const token = generateShareToken({ pollId, referrerId: currentUserId });
+        const token = generatePublicPollShareToken({ pollId, referrerId: currentUserId });
 
         res.status(200).json({
             success: true,
@@ -142,11 +145,12 @@ export class PollAccessController {
         });
     })
 
-    static getSharedPrivatePoll: RequestHandler = tryCatch(async (req, res) => {
-        const { shareToken } = req.params;
+    static accessPublicPoll: RequestHandler = tryCatch(async (req, res) => {
+        const { accessToken } = req.params;
 
-        const decoded = verifyToken(shareToken);
-        if (typeof decoded === 'string' || !decoded.pollId) {
+        const { decoded, error } = verifyToken(accessToken) as JwtTokenType;
+
+        if (error || typeof decoded === 'string' || !decoded?.pollId) {
             res.status(403).json({
                 success: false,
                 message: 'Invalid or expired access token'
@@ -163,9 +167,11 @@ export class PollAccessController {
             return;
         }
 
-        res.cookie('referrerToken', shareToken, {
+        res.cookie('referrerToken', accessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
+            sameSite: 'none',
+            maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
         });
 
         res.status(200).json({

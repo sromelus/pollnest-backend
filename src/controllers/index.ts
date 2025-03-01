@@ -3,7 +3,7 @@ import UsersController from './usersController'
 import AuthController from './authController'
 import PollsController from './pollsController'
 import ChatController from './chatController'
-import { PollAccessController } from './pollAccessController'
+import PollAccessController from './pollAccessController'
 
 export {
     UsersController,
@@ -11,5 +11,5 @@ export {
     PollsController,
     VotesController,
     ChatController,
-    PollAccessController
+    PollAccessController,
 }

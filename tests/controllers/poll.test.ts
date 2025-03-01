@@ -24,7 +24,7 @@ app.use('/api/v1', routes)
 
 
 describe('Poll Controller', () => {
-    let authToken: string;
+    let authAccessToken: string;
     let creatorId: Types.ObjectId;
 
     beforeEach(async () => {
@@ -36,7 +36,7 @@ describe('Poll Controller', () => {
             password: testUser({}).password
         });
 
-        authToken = loginRes.body.data.token;
+        authAccessToken = loginRes.body.data.authAccessToken;
     });
 
     describe('.listPolls', () => {
@@ -70,13 +70,15 @@ describe('Poll Controller', () => {
                 password: testUser({}).password
             });
 
+            const { authAccessToken } = loginRes.body.data;
+
             await testPoll({ creatorId, public: true }).save();
             await testPoll({ creatorId, public: false }).save();
             await testPoll({ creatorId, public: false }).save();
 
             const res = await request(app)
                 .get(`/api/v1/polls`)
-                .set('Authorization', `Bearer ${loginRes.body.data.token}`);
+                .set('Authorization', `Bearer ${authAccessToken}`);
 
             expect(res.status).toBe(200);
             expect(res.body.data.polls).toHaveLength(3);
@@ -98,7 +100,7 @@ describe('Poll Controller', () => {
             const poll = await testPoll({ creatorId, public: false}).save();
             const res = await request(app)
                 .get(`/api/v1/polls/${poll.id}`)
-                .set('Authorization', `Bearer ${authToken}`);
+                .set('Authorization', `Bearer ${authAccessToken}`);
 
             expect(res.status).toBe(200);
             expect(res.body.message).toBe('Poll fetched successfully');
@@ -117,7 +119,7 @@ describe('Poll Controller', () => {
             const poll = await testPoll({ creatorId: userSubscriber.id, public: false }).save();
             const res = await request(app)
                 .get(`/api/v1/polls/${poll.id}`)
-                .set('Authorization', `Bearer ${loginRes.body.data.token}`);
+                .set('Authorization', `Bearer ${loginRes.body.data.authAccessToken}`);
 
             expect(res.status).toBe(200);
             expect(res.body.message).toBe('Poll fetched successfully');
@@ -135,7 +137,7 @@ describe('Poll Controller', () => {
             const poll = await testPoll({ creatorId, public: false }).save();
             const res = await request(app)
                 .get(`/api/v1/polls/${poll.id}`)
-                .set('Authorization', `Bearer ${loginRes.body.data.token}`);
+                .set('Authorization', `Bearer ${loginRes.body.data.authAccessToken}`);
 
             expect(res.status).toBe(403);
             expect(res.body.message).toBe('Poll is not public');
@@ -164,7 +166,7 @@ describe('Poll Controller', () => {
 
     describe('.createPoll', () => {
         it('should create a poll', async () => {
-            const res = await request(app).post('/api/v1/polls').set('Authorization', `Bearer ${authToken}`).send({
+            const res = await request(app).post('/api/v1/polls').set('Authorization', `Bearer ${authAccessToken}`).send({
                 title: 'Test Poll',
                 description: 'This is a test poll',
                 pollOptions: [{image: 'trump_img', pollOptionText: 'trump', count: 0}, {image: 'kamala_img', pollOptionText: 'kamala', count: 0}],
@@ -176,7 +178,7 @@ describe('Poll Controller', () => {
         });
 
         it('should not create a poll when missing required fields', async () => {
-            const res = await request(app).post('/api/v1/polls').set('Authorization', `Bearer ${authToken}`).send({
+            const res = await request(app).post('/api/v1/polls').set('Authorization', `Bearer ${authAccessToken}`).send({
                 //missing fields
                 // title: 'Test Poll',
                 // description: 'This is a test poll',
@@ -202,7 +204,7 @@ describe('Poll Controller', () => {
         });
 
         it('should update a poll', async () => {
-            const res = await request(app).put(`/api/v1/polls/${pollId}`).set('Authorization', `Bearer ${authToken}`).send({
+            const res = await request(app).put(`/api/v1/polls/${pollId}`).set('Authorization', `Bearer ${authAccessToken}`).send({
                 title: 'Updated Poll',
                 description: 'This is an updated poll',
                 creatorId: creatorId,
@@ -224,7 +226,7 @@ describe('Poll Controller', () => {
         });
 
         it('should delete a poll', async () => {
-            const res = await request(app).delete(`/api/v1/polls/${pollId}`).set('Authorization', `Bearer ${authToken}`);
+            const res = await request(app).delete(`/api/v1/polls/${pollId}`).set('Authorization', `Bearer ${authAccessToken}`);
 
             expect(res.status).toBe(200);
             expect(res.body.message).toBe('Poll deleted successfully');

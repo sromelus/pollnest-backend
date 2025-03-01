@@ -1,0 +1,103 @@
+import jwt, { Secret, SignOptions } from 'jsonwebtoken';
+import { envConfig } from '../config/environment';
+import { User, IUser } from '../models';
+// import { blacklist } from '../services/blacklist';
+
+const config = envConfig[process.env.NODE_ENV as string];
+
+export type JwtAuthAccessTokenType = {
+    newAuthAccessToken: string | null;
+    decoded: jwt.JwtPayload | null;
+    error: Error | null;
+};
+
+export type JwtTokenType = {
+    decoded: jwt.JwtPayload | null;
+    error: Error | null;
+};
+
+export type PrivatePollInvitePayload = {
+    pollId: string;
+    email: string;
+    type: 'private-poll-invite';
+    expiresIn?: number;
+};
+
+export async function generateAuthAccessToken(userId: string): Promise<string> {
+    const secret = config.jwtSecret as Secret;
+    if (!secret) {
+        throw new Error('JWT_SECRET is not configured');
+    }
+    const user = await User.findById(userId).select('role') as IUser;
+
+    return jwt.sign({ currentUserId: user.id, role: user.role}, secret, { expiresIn: '15m' });
+}
+
+export function generateRefreshToken(userId: string): string {
+    const secret = config.jwtRefreshSecret as Secret;
+    if (!secret) {
+        throw new Error('JWT_SECRET is not configured');
+    }
+    return jwt.sign({ currentUserId: userId }, secret, { expiresIn: '30d' });
+}
+
+export function generatePrivatePollInviteToken(payload: PrivatePollInvitePayload): string {
+    const secret = config.jwtSecret as Secret;
+    if (!secret) {
+        throw new Error('JWT_SECRET is not configured');
+    }
+
+    return jwt.sign(payload, secret, { expiresIn: `${payload.expiresIn || '7d'}` });
+}
+
+export function generatePublicPollShareToken(payload: { pollId: string; referrerId: string }): string {
+    const secret = config.jwtSecret as Secret;
+    if (!secret) {
+        throw new Error('JWT_SECRET is not configured');
+    }
+    return jwt.sign(payload, secret);
+}
+
+export async function verifyAuthAccessToken(accessToken: string, refreshToken: string): Promise<JwtAuthAccessTokenType> {
+    const secret = config.jwtSecret as Secret;
+    if (!secret) {
+        throw new Error('JWT_SECRET is not configured');
+    }
+
+    try {
+        const decoded = jwt.verify(accessToken, secret) as jwt.JwtPayload;
+        return { newAuthAccessToken: null, decoded, error: null };
+    } catch (err: any) {
+        // check if token is expired
+        if (err?.name === 'TokenExpiredError') {
+            try {
+                const refreshDecoded = jwt.verify(refreshToken, secret) as jwt.JwtPayload;
+                const newAuthAccessToken = await generateAuthAccessToken(refreshDecoded.currentUserId);
+                return { newAuthAccessToken, decoded: refreshDecoded, error: null };
+            } catch (refreshErr) {
+                return { newAuthAccessToken: null, decoded: null, error: refreshErr as Error };
+            }
+        }
+
+        return { newAuthAccessToken: null, decoded: null, error: err };
+    }
+}
+
+export function verifyToken(token: string): JwtTokenType {
+    const secret = config.jwtSecret as Secret;
+    if (!secret) {
+        throw new Error('JWT_SECRET is not configured');
+    }
+
+    try {
+        const decoded = jwt.verify(token, secret) as jwt.JwtPayload;
+        return { decoded, error: null };
+    } catch (error: any) {
+        return { decoded: null, error: error as Error };
+    }
+}
+
+export function decodeToken(token: string): jwt.JwtPayload {
+    return jwt.decode(token) as jwt.JwtPayload;
+}
+

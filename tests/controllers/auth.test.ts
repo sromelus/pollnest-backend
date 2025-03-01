@@ -25,8 +25,7 @@ app.use('/api/v1', routes);
 
 describe('Auth Controller', () => {
     beforeEach(async () => {
-        const user = testUser({email: "john@example.com", password: "ValidPass123!", verified: true});
-        await user.save();
+        await testUser({email: "john@example.com", password: "ValidPass123!", verified: true}).save();
     });
 
     describe('.login', () => {
@@ -37,7 +36,8 @@ describe('Auth Controller', () => {
             });
 
             expect(res.status).toBe(200);
-            expect(res.body.data).toHaveProperty('token');
+            expect(res.body.message).toBe('Login successful');
+            expect(res.body.data).toHaveProperty('authAccessToken');
         });
 
         it('should not login user with invalid credentials', async () => {
@@ -58,9 +58,9 @@ describe('Auth Controller', () => {
                 password: 'ValidPass123!'
             });
 
-            const { token } = loginRes.body.data;
+            const { authAccessToken } = loginRes.body.data;
 
-            const logoutRes = await request(app).post('/api/v1/auth/logout').set('Authorization', `Bearer ${token}`);
+            const logoutRes = await request(app).post('/api/v1/auth/logout').set('Authorization', `Bearer ${authAccessToken}`);
 
             expect(logoutRes.status).toBe(200);
             expect(logoutRes.body).toHaveProperty('message', 'Logout successful');
@@ -350,9 +350,9 @@ describe('Auth Controller', () => {
             password: 'ValidPass123!'
           });
 
-          const token = loginRes.body.data.token;
+          const { authAccessToken } = loginRes.body.data;
 
-          const res = await request(app).put('/api/v1/auth/profile').set('Authorization', `Bearer ${token}`).send({
+          const res = await request(app).put('/api/v1/auth/profile').set('Authorization', `Bearer ${authAccessToken}`).send({
             name: 'John Doe Updated',
           });
 
@@ -378,9 +378,9 @@ describe('Auth Controller', () => {
             password: 'ValidPass123!'
           });
 
-          const token = loginRes.body.data.token;
+          const { authAccessToken } = loginRes.body.data;
 
-          const res = await request(app).delete('/api/v1/auth/profile').set('Authorization', `Bearer ${token}`)
+          const res = await request(app).delete('/api/v1/auth/profile').set('Authorization', `Bearer ${authAccessToken}`)
 
           expect(res.status).toBe(200);
           expect(res.body).toHaveProperty('message', 'User deleted successfully');

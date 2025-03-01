@@ -4,7 +4,7 @@ import { tryCatch } from '../utils';
 
 export default class PollsController {
     static listPolls: RequestHandler = tryCatch(async (req, res) => {
-        const { currentUserId, role } = req as any;
+        const { role } = req as any;
 
         let polls;
         if (role === UserRole.Admin) {

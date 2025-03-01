@@ -1,14 +1,16 @@
 import { RequestHandler, Response } from 'express';
 import { User, Vote, IUser } from '../models';
 import {
-    generateAuthToken,
+    generateAuthAccessToken,
     splitFullName,
     tryCatch,
     voterLocationInfo,
-    verifyToken
+    verifyToken,
+    JwtTokenType
 } from '../utils';
 import { Types } from 'mongoose';
 import { sendEmail, EmailOptions } from '../utils';
+import { generateRefreshToken } from '../utils/jwtManager';
 
 export default class AuthController {
     static login: RequestHandler = tryCatch(async (req, res) => {
@@ -20,10 +22,25 @@ export default class AuthController {
             return;
         }
 
-        const token = await generateAuthToken(user.id);
-        AuthController.setAuthCookie(res, token);
+        const authAccessToken = await generateAuthAccessToken(user.id);
+        const refreshToken = generateRefreshToken(user.id);
 
-        res.json({ success: true, message: 'Login successful', data: { token } });
+        // Set refresh token in HTTP-only cookie
+        AuthController.setRefreshTokenCookie(res, refreshToken);
+
+        // Return access token in response body
+        res.json({
+            success: true,
+            message: 'Login successful',
+            data: {
+                authAccessToken,
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    name: user.name
+                }
+            }
+        });
     });
 
     static logout: RequestHandler = tryCatch(async (req, res) => {
@@ -42,7 +59,7 @@ export default class AuthController {
         }
 
         const verificationCode = AuthController.generateVerificationCode();
-        const user = await AuthController.createOrUpdateTemporaryUser(email, verificationCode);
+        const user = await AuthController.preRegisterUserWithEmail(email, verificationCode);
         await AuthController.sendVerificationEmail(user, verificationCode);
 
         res.status(200).send({
@@ -56,11 +73,21 @@ export default class AuthController {
         const { name, email, password, verificationCode } = req.body;
         const { firstName, lastName } = splitFullName(name);
 
+        // get referrerId from cookie if it exists
         let referrerId = null;
         if (req.cookies) {
             const { referrerToken } = req.cookies;
-            const decoded = verifyToken(referrerToken) as { referrerId: string };
-            referrerId = decoded.referrerId ? new Types.ObjectId(decoded.referrerId) : null;
+
+            if (!referrerToken) return;
+
+            const { decoded, error } = verifyToken(referrerToken) as JwtTokenType;
+
+            if (error) {
+                res.status(401).send({ success: false, message: 'Invalid referrer token' });
+                return;
+            }
+
+            referrerId = decoded?.currentUserId ? new Types.ObjectId(decoded.currentUserId) : null;
         }
 
         const user = await User.findOneAndUpdate({email, verificationCode}, {
@@ -140,20 +167,11 @@ export default class AuthController {
         return user;
     }
 
-    private static setAuthCookie(res: Response, token: string): void {
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
-            sameSite: 'strict'
-        });
-    }
-
     private static generateVerificationCode(): string {
         return Math.floor(100000 + Math.random() * 900000).toString();
     }
 
-    private static async createOrUpdateTemporaryUser(email: string, verificationCode: string): Promise<IUser> {
+    static async preRegisterUserWithEmail(email: string, verificationCode: string | null): Promise<IUser> {
         return await User.findOneAndUpdate(
             { email },
             {
@@ -182,5 +200,14 @@ export default class AuthController {
         } else {
             console.log('options', options);
         }
+    }
+
+    private static setRefreshTokenCookie(res: Response, token: string): void {
+        res.cookie('refreshToken', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
+            sameSite: 'none',
+        });
     }
 }

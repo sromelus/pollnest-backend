@@ -5,7 +5,7 @@ import { testPoll, testUser } from "../factories";
 import routes from '../../src/routes';
 import { UserRole, IPoll } from '../../src/models';
 import { Types } from 'mongoose';
-import { generateAuthToken } from '../../src/utils';
+import { generateAuthAccessToken } from '../../src/utils';
 
 beforeAll(async () => {
     await dbConnect();
@@ -27,14 +27,14 @@ app.use('/api/v1', routes)
 describe('Chat Controller', () => {
     let userId: Types.ObjectId;
     let userId2: Types.ObjectId;
-    let token: string;
+    let authAccessToken: string;
 
     beforeEach(async () => {
         const user = await testUser({ email: 'admin@example.com', role: UserRole.Admin, verified: true }).save();
         const user2 = testUser({});
         userId = user.id;
         userId2 = user2.id;
-        token = await generateAuthToken(user.id);
+        authAccessToken = await generateAuthAccessToken(user.id);
     });
 
     describe('Poll Chat', () => {
@@ -67,13 +67,13 @@ describe('Chat Controller', () => {
         it('should add a new message to a poll chat', async () => {
             const messagePromises = [
                 request(app).post(`/api/v1/polls/${pollId}/chat/message`)
-                .set('Authorization', `Bearer ${token}`)
+                .set('Authorization', `Bearer ${authAccessToken}`)
                 .send({
                     content: 'This is a test message',
                     userId: userId,
                 }),
                 request(app).post(`/api/v1/polls/${pollId}/chat/message`)
-                .set('Authorization', `Bearer ${token}`)
+                .set('Authorization', `Bearer ${authAccessToken}`)
                 .send({
                     content: 'This is a test message 2',
                     userId: userId2,

@@ -22,7 +22,7 @@ app.use(express.json());
 app.use('/api/v1', routes);
 
 describe('User Controller', () => {
-    let authToken: string;
+    let authAccessToken: string;
     let userId: string;
 
     // Helper to create a test user before each test
@@ -41,14 +41,14 @@ describe('User Controller', () => {
         });
 
         userId = user.id;
-        authToken = loginRes.body.data.token;
+        authAccessToken = loginRes.body.data.authAccessToken;
     });
 
     describe('.listUsers', () => {
         it('should get all users successfully', async () => {
             const res = await request(app)
                 .get('/api/v1/users')
-                .set('Authorization', `Bearer ${authToken}`);
+                .set('Authorization', `Bearer ${authAccessToken}`);
 
             expect(res.status).toBe(200);
             expect(res.body.message).toBe('Users fetched successfully');
@@ -61,7 +61,7 @@ describe('User Controller', () => {
         it('should get user profile successfully', async () => {
             const res = await request(app)
                 .get(`/api/v1/users/${userId}`)
-                .set('Authorization', `Bearer ${authToken}`);
+                .set('Authorization', `Bearer ${authAccessToken}`);
 
             expect(res.status).toBe(200);
             expect(res.body.message).toBe('User fetched successfully');
@@ -74,7 +74,7 @@ describe('User Controller', () => {
         it('should create a new user successfully', async () => {
             const res = await request(app)
                 .post('/api/v1/users')
-                .set('Authorization', `Bearer ${authToken}`)
+                .set('Authorization', `Bearer ${authAccessToken}`)
                 .send({
                     name: 'Jane Doe',
                     email: 'jane@example.com',
@@ -93,7 +93,7 @@ describe('User Controller', () => {
         it('should create a new user with role successfully', async () => {
             const res = await request(app)
                 .post('/api/v1/users')
-                .set('Authorization', `Bearer ${authToken}`)
+                .set('Authorization', `Bearer ${authAccessToken}`)
                 .send({
                     name: 'Jane Doe',
                     email: 'jane@example.com',
@@ -113,7 +113,7 @@ describe('User Controller', () => {
         it('should update user profile successfully', async () => {
             const res = await request(app)
                 .put(`/api/v1/users/${userId}`)
-                .set('Authorization', `Bearer ${authToken}`)
+                .set('Authorization', `Bearer ${authAccessToken}`)
                 .send({
                     name: 'John Updated',
                     email: 'john.updated@example.com'
@@ -128,7 +128,7 @@ describe('User Controller', () => {
         it('should fail to update with invalid email', async () => {
             const res = await request(app)
                 .put(`/api/v1/users/${userId}`)
-                .set('Authorization', `Bearer ${authToken}`)
+                .set('Authorization', `Bearer ${authAccessToken}`)
                 .send({
                     email: 'invalid-email'
                 });
@@ -142,7 +142,7 @@ describe('User Controller', () => {
         it('should delete user successfully', async () => {
             const res = await request(app)
                 .delete(`/api/v1/users/${userId}`)
-                .set('Authorization', `Bearer ${authToken}`);
+                .set('Authorization', `Bearer ${authAccessToken}`);
 
             expect(res.status).toBe(200);
             expect(res.body.message).toBe('User deleted successfully');
@@ -152,7 +152,7 @@ describe('User Controller', () => {
             const fakeId = '507f1f77bcf86cd799439011';
             const res = await request(app)
                 .delete(`/api/v1/users/${fakeId}`)
-                .set('Authorization', `Bearer ${authToken}`);
+                .set('Authorization', `Bearer ${authAccessToken}`);
 
             expect(res.status).toBe(404);
             expect(res.body.message).toBe('User not found');

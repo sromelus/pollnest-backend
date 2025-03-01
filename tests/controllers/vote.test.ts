@@ -3,10 +3,11 @@ import request from 'supertest';
 import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/dbTestConfig';
 import routes from "../../src/routes";
 import { testPoll, testUser } from "../factories";
-import { UserRole, IPoll, PollOptionType } from "../../src/models";
+import { UserRole, IPoll, PollOptionType, Poll } from "../../src/models";
 import { Vote, User, IUser } from "../../src/models";
-import { generateAuthToken, verifyToken } from "../../src/utils";
+import { generateAuthAccessToken, verifyToken, JwtTokenType } from "../../src/utils";
 import { Types } from 'mongoose';
+import { PrivatePollInvitePayload } from "../../src/utils";
 
 beforeAll(async () => {
     await dbConnect();
@@ -25,7 +26,7 @@ app.use(express.json());
 app.use("/api/v1", routes);
 
 describe('Vote Controller', () => {
-    let authToken: string;
+    let accessToken: string;
     let poll: IPoll;
     let voterId: Types.ObjectId;
 
@@ -42,7 +43,7 @@ describe('Vote Controller', () => {
             password: testUser({}).password
         });
 
-        authToken = loginRes.body.data.token;
+        accessToken = loginRes.body.data.accessToken;
     });
 
     describe('.createVote', () => {
@@ -53,7 +54,7 @@ describe('Vote Controller', () => {
 
                 const res = await request(app)
                     .post(`/api/v1/polls/${poll.id}/votes`)
-                    .set('Authorization', `Bearer ${authToken}`)
+                    .set('Authorization', `Bearer ${accessToken}`)
                     .send({
                         pollId: poll.id,
                         voterId,
@@ -79,7 +80,7 @@ describe('Vote Controller', () => {
 
                 const requestPromises = async() => await request(app)
                     .post(`/api/v1/polls/${poll.id}/votes`)
-                    .set('Authorization', `Bearer ${authToken}`)
+                    .set('Authorization', `Bearer ${accessToken}`)
                     .send({
                         pollId: poll.id,
                         voterId,
@@ -112,7 +113,7 @@ describe('Vote Controller', () => {
             });
 
             it('should not create a vote if the pollOptionId is not found', async () => {
-                const res = await request(app).post(`/api/v1/polls/${poll.id}/votes`).set('Authorization', `Bearer ${authToken}`).send({
+                const res = await request(app).post(`/api/v1/polls/${poll.id}/votes`).set('Authorization', `Bearer ${accessToken}`).send({
                     pollId: poll.id,
                     voterId,
                     voterEthnicity: 'black',
@@ -222,16 +223,16 @@ describe('Vote Controller', () => {
                 expect(res6.body.message).toBe('You have reached the maximum number of free votes. Please create an account to vote more.');
                 expect(voteCount).not.toBeGreaterThan(5);
             })
-        })
+        });
 
-        describe('Only allow one vote for Polls with allowMultipleVotes set to false', () => {
+        describe('Vote for a poll with allowMultipleVotes set to false', () => {
             it('registered users should be able to create only one vote', async () => {
                 const poll = await testPoll({ creatorId: voterId, allowMultipleVotes: false}).save();
                 const kamalaOption = poll.pollOptions.find((option: PollOptionType) => option.pollOptionText === 'kamala') as PollOptionType;
 
                 const requestPromises = () => request(app)
                     .post(`/api/v1/polls/${poll.id}/votes`)
-                    .set('Authorization', `Bearer ${authToken}`)
+                    .set('Authorization', `Bearer ${accessToken}`)
                     .send({
                         pollId: poll.id,
                         voterId,
@@ -260,7 +261,7 @@ describe('Vote Controller', () => {
 
                 const requestPromises = () => request(app)
                     .post(`/api/v1/polls/${poll.id}/votes`)
-                    .set('Authorization', `Bearer ${authToken}`)
+                    .set('Authorization', `Bearer ${accessToken}`)
                     .send({
                         pollId: poll.id,
                         // voterId: undefined, non-registered user voterId
@@ -280,267 +281,266 @@ describe('Vote Controller', () => {
                 expect(res1.status).toBe(400);
                 expect(res2.body.message).toContain('Only registered users can vote. Please login or signup to vote.');
             })
-        })
-    })
-
-    describe('Points for Voting', () => {
-        it('should award 1 point to authenticated user for voting', async () => {
-            const kamalaOption = poll.pollOptions.find((option: PollOptionType) => option.pollOptionText === 'kamala') as PollOptionType;
-
-            const res = await request(app)
-                .post(`/api/v1/polls/${poll.id}/votes`)
-                .set('Authorization', `Bearer ${authToken}`)
-                .send({
-                    pollId: poll.id,
-                    voterId,
-                    voterEthnicity: 'black',
-                    voterGender: 'male',
-                    voteOptionText: 'kamala',
-                    pollOptionId: kamalaOption._id,
-                    voterIp: '127.0.0.1',
-                    voterCountry: 'US',
-                    voterRegion: 'MA',
-                    voterCity: 'Natick'
-                });
-
-            expect(res.status).toBe(201);
-            expect(res.body.data).toHaveProperty('pointsEarned', 1);
-            expect(res.body.data).toHaveProperty('totalPoints');
         });
 
-        it('should not award points to non-authenticated users', async () => {
-            const kamalaOption = poll.pollOptions.find((option: PollOptionType) => option.pollOptionText === 'kamala') as PollOptionType;
+        describe('Assign points for voting', () => {
+            it('should award 1 point to authenticated user for voting', async () => {
+                const kamalaOption = poll.pollOptions.find((option: PollOptionType) => option.pollOptionText === 'kamala') as PollOptionType;
 
-            const res = await request(app)
-                .post(`/api/v1/polls/${poll.id}/votes`)
-                .set('Authorization', `Bearer ${null}`)
-                .send({
-                    pollId: poll.id,
-                    voterEthnicity: 'black',
-                    voterGender: 'male',
-                    voteOptionText: 'kamala',
-                    pollOptionId: kamalaOption._id,
-                    voterIp: '127.0.0.1',
-                    voterCountry: 'US',
-                    voterRegion: 'MA',
-                    voterCity: 'Natick'
-                });
+                const res = await request(app)
+                    .post(`/api/v1/polls/${poll.id}/votes`)
+                    .set('Authorization', `Bearer ${accessToken}`)
+                    .send({
+                        pollId: poll.id,
+                        voterId,
+                        voterEthnicity: 'black',
+                        voterGender: 'male',
+                        voteOptionText: 'kamala',
+                        pollOptionId: kamalaOption._id,
+                        voterIp: '127.0.0.1',
+                        voterCountry: 'US',
+                        voterRegion: 'MA',
+                        voterCity: 'Natick'
+                    });
 
-            expect(res.status).toBe(201);
-            expect(res.body.data).not.toHaveProperty('pointsEarned');
-            expect(res.body.data).not.toHaveProperty('totalPoints');
+                expect(res.status).toBe(201);
+                expect(res.body.data).toHaveProperty('pointsEarned', 1);
+                expect(res.body.data).toHaveProperty('totalPoints');
+            });
+
+            it('should not award points to non-authenticated users', async () => {
+                const kamalaOption = poll.pollOptions.find((option: PollOptionType) => option.pollOptionText === 'kamala') as PollOptionType;
+
+                const res = await request(app)
+                    .post(`/api/v1/polls/${poll.id}/votes`)
+                    .set('Authorization', `Bearer ${null}`)
+                    .send({
+                        pollId: poll.id,
+                        // voterId: null non-authenticated user voterId
+                        voterEthnicity: 'black',
+                        voterGender: 'male',
+                        voteOptionText: 'kamala',
+                        pollOptionId: kamalaOption._id,
+                        voterIp: '127.0.0.1',
+                        voterCountry: 'US',
+                        voterRegion: 'MA',
+                        voterCity: 'Natick'
+                    });
+
+                expect(res.status).toBe(201);
+                expect(res.body.data).not.toHaveProperty('pointsEarned');
+                expect(res.body.data).not.toHaveProperty('totalPoints');
+            });
+
+            it('should accumulate points for multiple votes', async () => {
+                const kamalaOption = poll.pollOptions.find((option: PollOptionType) => option.pollOptionText === 'kamala') as PollOptionType;
+
+                const voteRequest = () => request(app)
+                    .post(`/api/v1/polls/${poll.id}/votes`)
+                    .set('Authorization', `Bearer ${accessToken}`)
+                    .send({
+                        pollId: poll.id,
+                        voterId,
+                        voterEthnicity: 'black',
+                        voterGender: 'male',
+                        voteOptionText: 'kamala',
+                        pollOptionId: kamalaOption._id,
+                        voterIp: '127.0.0.1',
+                        voterCountry: 'US',
+                        voterRegion: 'MA',
+                        voterCity: 'Natick'
+                    });
+
+                const res1 = await voteRequest();
+                const res2 = await voteRequest();
+                const res3 = await voteRequest();
+
+                expect(res3.status).toBe(201);
+                expect(res3.body.data).toHaveProperty('pointsEarned', 1);
+                expect(res3.body.data).toHaveProperty('totalPoints', 3);
+            });
         });
 
-        it('should accumulate points for multiple votes', async () => {
-            const kamalaOption = poll.pollOptions.find((option: PollOptionType) => option.pollOptionText === 'kamala') as PollOptionType;
+        describe('Track vote count', () => {
+            it('should increment vote count for authenticated user when voting', async () => {
+                const kamalaOption = poll.pollOptions.find((option: PollOptionType) => option.pollOptionText === 'kamala') as PollOptionType;
 
-            const voteRequest = () => request(app)
-                .post(`/api/v1/polls/${poll.id}/votes`)
-                .set('Authorization', `Bearer ${authToken}`)
-                .send({
-                    pollId: poll.id,
-                    voterId,
-                    voterEthnicity: 'black',
-                    voterGender: 'male',
-                    voteOptionText: 'kamala',
-                    pollOptionId: kamalaOption._id,
-                    voterIp: '127.0.0.1',
-                    voterCountry: 'US',
-                    voterRegion: 'MA',
-                    voterCity: 'Natick'
-                });
+                const res = await request(app)
+                    .post(`/api/v1/polls/${poll.id}/votes`)
+                    .set('Authorization', `Bearer ${accessToken}`)
+                    .send({
+                        pollId: poll.id,
+                        voterId,
+                        voterEthnicity: 'black',
+                        voterGender: 'male',
+                        voteOptionText: 'kamala',
+                        pollOptionId: kamalaOption._id,
+                        voterIp: '127.0.0.1',
+                        voterCountry: 'US',
+                        voterRegion: 'MA',
+                        voterCity: 'Natick'
+                    });
 
-            const res1 = await voteRequest();
-            const res2 = await voteRequest();
-            const res3 = await voteRequest();
+                expect(res.status).toBe(201);
+                expect(res.body.data).toHaveProperty('voteCount', 1);
+            });
 
-            expect(res3.status).toBe(201);
-            expect(res3.body.data).toHaveProperty('pointsEarned', 1);
-            expect(res3.body.data).toHaveProperty('totalPoints', 3);
-        });
-    })
+            it('should accumulate vote count for multiple votes', async () => {
+                const kamalaOption = poll.pollOptions.find((option: PollOptionType) => option.pollOptionText === 'kamala') as PollOptionType;
 
-    describe('Vote Count Tracking', () => {
-        it('should increment vote count for authenticated user when voting', async () => {
-            const kamalaOption = poll.pollOptions.find((option: PollOptionType) => option.pollOptionText === 'kamala') as PollOptionType;
+                const voteRequest = () => request(app)
+                    .post(`/api/v1/polls/${poll.id}/votes`)
+                    .set('Authorization', `Bearer ${accessToken}`)
+                    .send({
+                        pollId: poll.id,
+                        voterId,
+                        voterEthnicity: 'black',
+                        voterGender: 'male',
+                        voteOptionText: 'kamala',
+                        pollOptionId: kamalaOption._id,
+                        voterIp: '127.0.0.1',
+                        voterCountry: 'US',
+                        voterRegion: 'MA',
+                        voterCity: 'Natick'
+                    });
 
-            const res = await request(app)
-                .post(`/api/v1/polls/${poll.id}/votes`)
-                .set('Authorization', `Bearer ${authToken}`)
-                .send({
-                    pollId: poll.id,
-                    voterId,
-                    voterEthnicity: 'black',
-                    voterGender: 'male',
-                    voteOptionText: 'kamala',
-                    pollOptionId: kamalaOption._id,
-                    voterIp: '127.0.0.1',
-                    voterCountry: 'US',
-                    voterRegion: 'MA',
-                    voterCity: 'Natick'
-                });
+                await voteRequest();
+                await voteRequest();
+                const res = await voteRequest();
 
-            expect(res.status).toBe(201);
-            expect(res.body.data).toHaveProperty('voteCount', 1);
-        });
+                expect(res.status).toBe(201);
+                expect(res.body.data).toHaveProperty('voteCount', 3);
+            });
 
-        it('should accumulate vote count for multiple votes', async () => {
-            const kamalaOption = poll.pollOptions.find((option: PollOptionType) => option.pollOptionText === 'kamala') as PollOptionType;
+            it('should not track vote count for non-authenticated users', async () => {
+                const kamalaOption = poll.pollOptions.find((option: PollOptionType) => option.pollOptionText === 'kamala') as PollOptionType;
 
-            const voteRequest = () => request(app)
-                .post(`/api/v1/polls/${poll.id}/votes`)
-                .set('Authorization', `Bearer ${authToken}`)
-                .send({
-                    pollId: poll.id,
-                    voterId,
-                    voterEthnicity: 'black',
-                    voterGender: 'male',
-                    voteOptionText: 'kamala',
-                    pollOptionId: kamalaOption._id,
-                    voterIp: '127.0.0.1',
-                    voterCountry: 'US',
-                    voterRegion: 'MA',
-                    voterCity: 'Natick'
-                });
+                const res = await request(app)
+                    .post(`/api/v1/polls/${poll.id}/votes`)
+                    .send({
+                        pollId: poll.id,
+                        voterEthnicity: 'black',
+                        voterGender: 'male',
+                        voteOptionText: 'kamala',
+                        pollOptionId: kamalaOption._id,
+                        voterIp: '127.0.0.1',
+                        voterCountry: 'US',
+                        voterRegion: 'MA',
+                        voterCity: 'Natick'
+                    });
 
-            await voteRequest();
-            await voteRequest();
-            const res = await voteRequest();
-
-            expect(res.status).toBe(201);
-            expect(res.body.data).toHaveProperty('voteCount', 3);
+                expect(res.status).toBe(201);
+                expect(res.body.data).not.toHaveProperty('voteCount');
+            });
         });
 
-        it('should not track vote count for non-authenticated users', async () => {
-            const kamalaOption = poll.pollOptions.find((option: PollOptionType) => option.pollOptionText === 'kamala') as PollOptionType;
+        describe('New user Vote on a public poll from a referral link', () => {
+            it("should award 10 points to the referrer when the referred user vote the first time", async () => {
+                // Generate referrer user
+                const referrer = await testUser({ email: 'referrer@example.com', role: UserRole.User, verified: true }).save();
+                const referrerAuthAccessToken = await generateAuthAccessToken(referrer.id);
 
-            const res = await request(app)
-                .post(`/api/v1/polls/${poll.id}/votes`)
-                .send({
-                    pollId: poll.id,
-                    voterEthnicity: 'black',
-                    voterGender: 'male',
-                    voteOptionText: 'kamala',
-                    pollOptionId: kamalaOption._id,
-                    voterIp: '127.0.0.1',
-                    voterCountry: 'US',
-                    voterRegion: 'MA',
-                    voterCity: 'Natick'
-                });
+                // Referrer creates a share link token for the poll and share the link
+                const shareRes = await request(app)
+                    .post(`/api/v1/polls/${poll.id}/public_poll_share_link`)
+                    .set('Authorization', `Bearer ${referrerAuthAccessToken}`)
 
-            expect(res.status).toBe(201);
-            expect(res.body.data).not.toHaveProperty('voteCount');
+                const { shareToken } = shareRes.body.data;
+
+                // Referred user navigate to poll shared from the referrer link
+                const shareLinkRes = await request(app)
+                    .get(`/api/v1/polls/public_poll_access/${shareToken}`);
+
+                // Get referral token from the cookie
+                const cookie = shareLinkRes.headers['set-cookie'][0];
+                const { referralToken } = cookie.match(/=(?<referralToken>.+?(?=;))/)?.groups || {};
+
+                const { decoded, error } = verifyToken(referralToken) as JwtTokenType;
+
+                if (error || typeof decoded === 'string' || !decoded?.pollId) {
+                    throw new Error('Invalid or expired access token');
+                }
+
+                // Referred user signup with the referrerId
+                const referredUser = await testUser({
+                    email: 'referreduser@example.com',
+                    role: UserRole.User,
+                    referrerId: decoded.referrerId,
+                    verified: true
+                }).save();
+
+                // Referred user votes on the poll and the referrer gets 10 points
+                const voteResPromise = () => request(app)
+                    .post(`/api/v1/polls/${poll.id}/votes`)
+                    .set('Authorization', `Bearer ${shareToken}`)
+                    .send({
+                        pollId: poll.id,
+                        voterId: referredUser.id,
+                        voterEthnicity: 'black',
+                        voterGender: 'male',
+                        voteOptionText: poll.pollOptions[1].pollOptionText,
+                        pollOptionId: poll.pollOptions[1]._id,
+                    });
+
+                await voteResPromise();
+                const voteRes = await voteResPromise();
+
+                const updatedReferrer = await User.findById(referrer.id) as IUser;
+
+                expect(voteRes.status).toBe(201);
+                expect(referredUser.referrerId.toString()).toBe(referrer.id);
+                expect(updatedReferrer.referralPoints).toBe(referrer.referralPoints + 10);
+                expect(updatedReferrer.referralPoints).not.toBe(20);
+            });
+        });
+
+        describe('User with referral link vote on a private poll', () => {
+            let subscriber: IUser;
+            let subscriberAccessToken: string;
+            let poll: IPoll;
+            let inviteAccessData: { email: string; inviteAccessToken: string; inviteAccessLink: string; expiresIn: number };
+            let pollAccessWithTokenId: string;
+
+            beforeEach(async () => {
+                //Set up poll access with invite link
+                subscriber = await testUser({
+                    email: 'subscriber@example.com',
+                    role: UserRole.Subscriber,
+                    verified: true
+                }).save();
+                subscriberAccessToken = await generateAuthAccessToken(subscriber.id);
+                poll = await testPoll({ creatorId: subscriber.id, allowMultipleVotes: false, public: false }).save();
+
+                const inviteRes = await request(app)
+                    .post(`/api/v1/polls/${poll.id}/invites`)
+                    .set('Authorization', `Bearer ${subscriberAccessToken}`)
+                    .send({ emails: ['test@example.com'], expiresIn: 1000 * 60 });
+
+                inviteAccessData = inviteRes.body.data.invites[0];
+                const pollAccessWithTokenRes = await request(app).get(`/api/v1/polls/private_poll_access/${inviteAccessData.inviteAccessToken}`);
+                pollAccessWithTokenId = pollAccessWithTokenRes.body.data.poll._id;
+             });
+
+            it('should be able to vote on a private poll successfully', async () => {
+                const pollAccessWithTokenData = await Poll.findById(pollAccessWithTokenId) as IPoll;
+                const userWithAccessToken = await User.findOne({ email: inviteAccessData.email }) as IUser;
+
+                const res = await request(app)
+                    .post(`/api/v1/polls/${pollAccessWithTokenData._id}/votes`)
+                    .set('Authorization', `Bearer ${null}`)
+                    .send({
+                        pollId: pollAccessWithTokenData._id,
+                        voterEthnicity: 'black',
+                        voterId: userWithAccessToken.id,
+                        voterGender: 'male',
+                        voteOptionText: pollAccessWithTokenData.pollOptions[1].pollOptionText,
+                        pollOptionId: pollAccessWithTokenData.pollOptions[1]._id,
+                    });
+
+                expect(res.status).toBe(201);
+                expect(res.body.data).toHaveProperty('voteCount', 1);
+                expect(userWithAccessToken).toBeDefined();
+            })
         });
     });
-
-    describe('New user Vote on a public poll from a referral link', () => {
-        it("should award 10 points to the referrer when the referred user vote the first time", async () => {
-            // Generate referrer user
-            const referrer = await testUser({ email: 'referrer@example.com', role: UserRole.User, verified: true }).save();
-            const referrerToken = await generateAuthToken(referrer.id);
-
-            // Generate referrer create a share link token for the poll and share the link
-            const shareRes = await request(app)
-                .post(`/api/v1/polls/${poll.id}/create_share_link`)
-                .set('Authorization', `Bearer ${referrerToken}`)
-
-            const { shareToken } = shareRes.body.data;
-
-            // Referred user navigate to poll shared by referrer link
-            const shareLinkRes = await request(app)
-                .get(`/api/v1/polls/access/${shareToken}`);
-
-            // Get referral token from the cookie
-            const cookie = shareLinkRes.headers['set-cookie'][0];
-            const { referralToken } = cookie.match(/=(?<referralToken>.+?(?=;))/)?.groups || {};
-
-            const token = verifyToken(referralToken) as { referrerId: string };
-
-            // Referred user signup with the referrerId
-            const referredUser = await testUser({ email: 'referreduser@example.com', role: UserRole.User, referrerId: new Types.ObjectId(token.referrerId), verified: true }).save();
-
-            // Referred user votes on the poll and the referrer gets 10 points
-            const voteResPromise = () => request(app)
-                .post(`/api/v1/polls/${poll.id}/votes`)
-                .set('Authorization', `Bearer ${shareToken}`)
-                .send({
-                    pollId: poll.id,
-                    voterId: referredUser.id,
-                    voterEthnicity: 'black',
-                    voterGender: 'male',
-                    voteOptionText: poll.pollOptions[1].pollOptionText,
-                    pollOptionId: poll.pollOptions[1]._id,
-                });
-
-            await voteResPromise();
-            const voteRes = await voteResPromise();
-
-            const updatedReferrer = await User.findById(referrer.id) as IUser;
-
-            expect(voteRes.status).toBe(201);
-            expect(referredUser.referrerId.toString()).toBe(referrer.id);
-            expect(updatedReferrer.referralPoints).toBe(referrer.referralPoints + 10);
-            expect(updatedReferrer.referralPoints).not.toBe(20);
-        });
-    })
-
-    describe('User with referral link vote on a private poll', () => {
-        it('should be able to vote on poll successfully', async () => {
-            // Allow authenticated user to generate invite links for a list of emails to access a private poll
-            const emails = ['invite1@example.com', 'invite2@example.com'];
-
-            const res = await request(app)
-                .post(`/api/v1/polls/${poll.id}/invites`)
-                .set('Authorization', `Bearer ${authToken}`)
-                .send({ emails, expiresIn: 1000 * 60 });
-
-            expect(res.status).toBe(200);
-            expect(res.body.message).toBe('Poll invites generated successfully');
-            expect(res.body.data.invites).toHaveLength(2);
-            expect(res.body.data.invites[0]).toHaveProperty('email', emails[0]);
-            expect(res.body.data.invites[0]).toHaveProperty('accessToken');
-            expect(res.body.data.invites[0]).toHaveProperty('accessLink');
-
-            const referrer = await testUser({ email: 'referrer@example.com', role: UserRole.User, verified: true }).save();
-            const referrerToken = await generateAuthToken(referrer.id);
-
-            // Generate referrer create a share link token for the poll and share the link
-            const shareRes = await request(app)
-                .post(`/api/v1/polls/${poll.id}/create_share_link`)
-                .set('Authorization', `Bearer ${referrerToken}`)
-
-            const { shareToken } = shareRes.body.data;
-
-            // Referred user navigate to poll shared by referrer link
-            const shareLinkRes = await request(app)
-                .get(`/api/v1/polls/access/${shareToken}`);
-
-            // Get referral token from the cookie
-            const cookie = shareLinkRes.headers['set-cookie'][0];
-            const { referralToken } = cookie.match(/=(?<referralToken>.+?(?=;))/)?.groups || {};
-
-            const token = verifyToken(referralToken) as { referrerId: string };
-
-            // Referred user signup and create a new user with the referrerId
-            const referredUser = await testUser({ email: 'referreduser@example.com', role: UserRole.User, referrerId: new Types.ObjectId(token.referrerId), verified: true }).save();
-
-            // Referred user votes on the poll and the referrer gets 10 points
-            const voteResPromise = () => request(app)
-                .post(`/api/v1/polls/${poll.id}/votes`)
-                .set('Authorization', `Bearer ${shareToken}`)
-                .send({
-                    pollId: poll.id,
-                    voterId: referredUser.id,
-                    voterEthnicity: 'black',
-                    voterGender: 'male',
-                    voteOptionText: poll.pollOptions[1].pollOptionText,
-                    pollOptionId: poll.pollOptions[1]._id,
-                });
-
-            const voteRes = await voteResPromise();
-
-            expect(voteRes.status).toBe(201);
-            expect(voteRes.body.data).toHaveProperty('voteCount', 1);
-        })
-    })
 })

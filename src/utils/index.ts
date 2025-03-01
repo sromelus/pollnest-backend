@@ -1,17 +1,30 @@
 import { splitFullName } from './formatName';
-import { generateAuthToken, verifyToken, generateInviteToken, generateShareToken } from './jwt';
+import {
+    generateAuthAccessToken,
+    verifyToken,
+    verifyAuthAccessToken,
+    generatePrivatePollInviteToken,
+    generatePublicPollShareToken,
+    JwtAuthAccessTokenType,
+    JwtTokenType,
+    PrivatePollInvitePayload
+} from './jwtManager';
 import { tryCatch } from './tryCatch';
 import { voterLocationInfo } from './voterLocationInfo';
 import { sendEmail, EmailOptions } from './emailClient';
 
 export {
     splitFullName,
-    generateAuthToken,
+    generateAuthAccessToken,
     verifyToken,
+    verifyAuthAccessToken,
+    JwtAuthAccessTokenType,
+    JwtTokenType,
     tryCatch,
     voterLocationInfo,
-    generateInviteToken,
-    generateShareToken,
+    generatePrivatePollInviteToken,
+    generatePublicPollShareToken,
     sendEmail,
-    EmailOptions
+    EmailOptions,
+    PrivatePollInvitePayload
 };
