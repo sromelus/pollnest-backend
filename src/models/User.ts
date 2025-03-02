@@ -25,6 +25,8 @@ export interface IUser extends Document {
     phone: string;
     verified: boolean;
     verificationCode: string;
+    lastLoginAt?: Date;
+    lastLogoutAt?: Date;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -118,6 +120,14 @@ const UserSchema = new Schema<IUser>({
             type: Schema.Types.String,
             required: false,
             trim: true,
+            default: null
+        },
+        lastLoginAt: {
+            type: Schema.Types.Date,
+            default: null
+        },
+        lastLogoutAt: {
+            type: Schema.Types.Date,
             default: null
         }
     },

@@ -164,6 +164,9 @@ export default class AuthController {
         if (!user || !await user.comparePassword(password)) {
             return null;
         }
+
+        await user.updateOne({ lastLoginAt: new Date() });
+
         return user;
     }
 
