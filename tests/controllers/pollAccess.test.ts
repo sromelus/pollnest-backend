@@ -298,7 +298,7 @@ describe('PollAccessController', () => {
             poll = await testPoll({ creatorId: adminId }).save();
         });
 
-        it('should allow new user to navigate to a poll successfully from a referrer link', async () => {
+        it('should allow new user to navigate to a public poll successfully from a referrer link', async () => {
             const shareRes = await request(app)
                 .post(`/api/v1/polls/${poll.id}/public_poll_share_link`)
                 .set('Authorization', `Bearer ${referrerAuthAccessToken}`)
