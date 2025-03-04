@@ -2,10 +2,12 @@ import express from 'express';
 import request from 'supertest';
 import { IPoll, User, UserRole } from '../../src/models';
 import { testUser, testPoll } from '../factories';
-import { generateAuthAccessToken, JwtTokenType, generatePrivatePollInviteToken, verifyToken } from '../../src/utils';
+import { generateAuthAccessToken, JwtTokenType, generatePrivatePollInviteToken, verifyToken, generateRefreshToken } from '../../src/utils';
 import routes from '../../src/routes';
 import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/dbTestConfig';
 import { Types } from 'mongoose';
+import cookieParser from 'cookie-parser';
+import { getCookieValue } from '../helpers/getCookieValue';
 
 beforeAll(async () => {
     await dbConnect();
@@ -20,6 +22,8 @@ afterAll(async () => {
 });
 
 const app = express();
+
+app.use(cookieParser());
 app.use(express.json());
 app.use('/api/v1', routes)
 
@@ -28,12 +32,13 @@ describe('PollAccessController', () => {
     let authAccessToken: string;
     let userId: Types.ObjectId;
     let privatePoll: IPoll;
-
+    let refreshToken: string;
     beforeEach(async () => {
         // Create test user
         const user = await testUser({ role: UserRole.Subscriber, verified: true }).save();
         userId = user.id;
         authAccessToken = await generateAuthAccessToken(userId.toString());
+        refreshToken = generateRefreshToken(userId.toString());
 
         // Create a private poll
         privatePoll = await testPoll({ public: false, allowMultipleVotes: false, creatorId: userId }).save();
@@ -46,7 +51,8 @@ describe('PollAccessController', () => {
 
             const res = await request(app)
                 .get(`/api/v1/polls/my_polls`)
-                .set('Authorization', `Bearer ${authAccessToken}`);
+                .set('Authorization', `Bearer ${authAccessToken}`)
+                .set('Cookie', `refreshToken=${refreshToken}`);
 
             // expect(res.status).toBe(200);
             expect(res.body.message).toBe('Polls fetched successfully');
@@ -59,7 +65,8 @@ describe('PollAccessController', () => {
         it('should allow subscribers to access a poll that belongs to them', async () => {
             const res = await request(app)
                 .get(`/api/v1/polls/my_polls/${privatePoll.id}`)
-                .set('Authorization', `Bearer ${authAccessToken}`);
+                .set('Authorization', `Bearer ${authAccessToken}`)
+                .set('Cookie', `refreshToken=${refreshToken}`);
 
             expect(res.status).toBe(200);
             expect(res.body.message).toBe('Poll fetched successfully');
@@ -69,10 +76,12 @@ describe('PollAccessController', () => {
         it('should not allow subscribers to access a poll that does not belong to them', async () => {
             const subscriber = await testUser({ email: 'subscriber@example.com', verified: true }).save();
             const subscriberAuthAccessToken = await generateAuthAccessToken(subscriber.id.toString());
+            const subscriberRefreshToken = generateRefreshToken(subscriber.id.toString());
 
             const res = await request(app)
                 .get(`/api/v1/polls/my_polls/${privatePoll.id}`)
-                .set('Authorization', `Bearer ${subscriberAuthAccessToken}`);
+                .set('Authorization', `Bearer ${subscriberAuthAccessToken}`)
+                .set('Cookie', `refreshToken=${subscriberRefreshToken}`);
 
             expect(res.status).toBe(403);
             expect(res.body.message).toBe('You are not authorized to access this poll');
@@ -85,10 +94,13 @@ describe('PollAccessController', () => {
                 .send({ email: nonSubscriber.email, password: 'ValidPass123!' });
 
             const nonSubscriberAuthAccessToken = resLogin.body.data.authAccessToken;
+            const cookies: unknown = resLogin.headers['set-cookie'];
+            const nonSubscriberRefreshToken = getCookieValue(cookies as string[], 'refreshToken');
 
             const res = await request(app)
                 .get(`/api/v1/polls/my_polls/${privatePoll.id}`)
-                .set('Authorization', `Bearer ${nonSubscriberAuthAccessToken}`);
+                .set('Authorization', `Bearer ${nonSubscriberAuthAccessToken}`)
+                .set('Cookie', `refreshToken=${nonSubscriberRefreshToken}`);
 
             expect(res.status).toBe(403);
             expect(res.body.message).toBe('You are not authorized to access this poll');
@@ -102,6 +114,7 @@ describe('PollAccessController', () => {
             const res = await request(app)
                 .post(`/api/v1/polls/${privatePoll.id}/invites`)
                 .set('Authorization', `Bearer ${authAccessToken}`)
+                .set('Cookie', `refreshToken=${refreshToken}`)
                 .send({ emails, expiresIn: 1000 * 60 });
 
             expect(res.status).toBe(200);
@@ -116,6 +129,7 @@ describe('PollAccessController', () => {
             const res = await request(app)
                 .post(`/api/v1/polls/${privatePoll.id}/invites`)
                 .set('Authorization', `Bearer ${authAccessToken}`)
+                .set('Cookie', `refreshToken=${refreshToken}`)
                 .send({ emails: ['newuser@example.com'], expiresIn: 1000 * 60 });
 
             const user = await User.findOne({ email: 'newuser@example.com' });
@@ -130,10 +144,12 @@ describe('PollAccessController', () => {
             // Create another user
             const anotherUser = await testUser({ email: 'another@example.com', role: UserRole.Subscriber }).save();
             const anotherUserAuthAccessToken = await generateAuthAccessToken(anotherUser.id.toString());
+            const anotherUserRefreshToken = generateRefreshToken(anotherUser.id.toString());
 
             const res = await request(app)
                 .post(`/api/v1/polls/${privatePoll.id}/invites`)
                 .set('Authorization', `Bearer ${anotherUserAuthAccessToken}`)
+                .set('Cookie', `refreshToken=${anotherUserRefreshToken}`)
                 .send({ emails: ['test@example.com'], expiresIn: 1000 * 60 });
 
             expect(res.status).toBe(403);
@@ -144,10 +160,12 @@ describe('PollAccessController', () => {
             // Create another user
             const admin = await testUser({ email: 'admin@example.com', role: UserRole.Admin }).save();
             const adminAuthAccessToken = await generateAuthAccessToken(admin.id.toString());
+            const adminRefreshToken = generateRefreshToken(admin.id.toString());
 
             const res = await request(app)
                 .post(`/api/v1/polls/${privatePoll.id}/invites`)
                 .set('Authorization', `Bearer ${adminAuthAccessToken}`)
+                .set('Cookie', `refreshToken=${adminRefreshToken}`)
                 .send({ emails: ['test@example.com'], expiresIn: 1000 * 60 });
 
             expect(res.status).toBe(200);
@@ -160,6 +178,7 @@ describe('PollAccessController', () => {
             const res = await request(app)
                 .post(`/api/v1/polls/${nonExistentPollId}/invites`)
                 .set('Authorization', `Bearer ${authAccessToken}`)
+                .set('Cookie', `refreshToken=${refreshToken}`)
                 .send({ emails: ['test@example.com'], expiresIn: 1000 * 60 });
 
             expect(res.status).toBe(404);
@@ -173,6 +192,7 @@ describe('PollAccessController', () => {
             const inviteRes = await request(app)
                 .post(`/api/v1/polls/${privatePoll.id}/invites`)
                 .set('Authorization', `Bearer ${authAccessToken}`)
+                .set('Cookie', `refreshToken=${refreshToken}`)
                 .send({ emails: ['test@example.com'], expiresIn: 1000 * 60 });
 
             const { inviteAccessToken } = inviteRes.body.data.invites[0];
@@ -225,6 +245,7 @@ describe('PollAccessController', () => {
             const inviteRes = await request(app)
                   .post(`/api/v1/polls/${privatePoll.id}/invites`)
                   .set('Authorization', `Bearer ${authAccessToken}`)
+                  .set('Cookie', `refreshToken=${refreshToken}`)
                   .send({ emails: ['test@example.com'], expiresIn: '0' });
 
             const { inviteAccessToken } = inviteRes.body.data.invites[0];
@@ -241,6 +262,7 @@ describe('PollAccessController', () => {
             const inviteRes = await request(app)
                 .post(`/api/v1/polls/${privatePoll.id}/invites`)
                 .set('Authorization', `Bearer ${authAccessToken}`)
+                .set('Cookie', `refreshToken=${refreshToken}`)
                 .send({ emails: ['test@example.com'], expiresIn: 1000 * 60 });
 
             const { inviteAccessToken } = inviteRes.body.data.invites[0];
@@ -259,6 +281,7 @@ describe('PollAccessController', () => {
         let referrerAuthAccessToken: string;
         let referrerId: Types.ObjectId;
         let poll: IPoll;
+        let referrerRefreshToken: string;
 
         beforeEach(async () => {
             // Create referrer user
@@ -267,7 +290,7 @@ describe('PollAccessController', () => {
             referrerId = referrer.id;
 
             referrerAuthAccessToken = await generateAuthAccessToken(referrer.id);
-
+            referrerRefreshToken = generateRefreshToken(referrer.id.toString());
             // Create a poll for testing
             poll = await testPoll({ creatorId: adminId }).save();
         });
@@ -276,15 +299,17 @@ describe('PollAccessController', () => {
             const res = await request(app)
                 .post(`/api/v1/polls/${poll.id}/public_poll_share_link`)
                 .set('Authorization', `Bearer ${referrerAuthAccessToken}`)
+                .set('Cookie', `refreshToken=${referrerRefreshToken}`)
 
             expect(res.status).toBe(200);
             expect(res.body.message).toBe('Poll share link generated successfully');
-            expect(res.body.data).toHaveProperty('shareLink');
+            expect(res.body.data).toHaveProperty('accessLink');
         });
     });
 
     describe('.accessPublicPoll', () => {
         let referrerAuthAccessToken: string;
+        let referrerRefreshToken: string;
         let poll: IPoll;
 
         beforeEach(async () => {
@@ -293,7 +318,7 @@ describe('PollAccessController', () => {
             const referrer = await testUser({ email: 'referrer@example.com', role: UserRole.User }).save();
 
             referrerAuthAccessToken = await generateAuthAccessToken(referrer.id);
-
+            referrerRefreshToken = generateRefreshToken(referrer.id.toString());
             // Create a poll for testing
             poll = await testPoll({ creatorId: adminId }).save();
         });
@@ -302,11 +327,12 @@ describe('PollAccessController', () => {
             const shareRes = await request(app)
                 .post(`/api/v1/polls/${poll.id}/public_poll_share_link`)
                 .set('Authorization', `Bearer ${referrerAuthAccessToken}`)
+                .set('Cookie', `refreshToken=${referrerRefreshToken}`)
 
-            const { shareToken } = shareRes.body.data;
+            const { accessToken } = shareRes.body.data;
 
             const res = await request(app)
-                .get(`/api/v1/polls/public_poll_access/${shareToken}`);
+                .get(`/api/v1/polls/public_poll_access/${accessToken}`);
 
             expect(res.status).toBe(200);
             expect(res.body.data).toHaveProperty('poll');

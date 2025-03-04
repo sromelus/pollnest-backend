@@ -5,9 +5,10 @@ import routes from "../../src/routes";
 import { testPoll, testUser } from "../factories";
 import { UserRole, IPoll, PollOptionType, Poll } from "../../src/models";
 import { Vote, User, IUser } from "../../src/models";
-import { generateAuthAccessToken, verifyToken, JwtTokenType } from "../../src/utils";
+import { generateAuthAccessToken, verifyToken, JwtTokenType, generateRefreshToken } from "../../src/utils";
 import { Types } from 'mongoose';
-import { PrivatePollInvitePayload } from "../../src/utils";
+import cookieParser from "cookie-parser";
+import { getCookieValue } from "../helpers/getCookieValue";
 
 beforeAll(async () => {
     await dbConnect();
@@ -22,6 +23,8 @@ afterAll(async () => {
 });
 
 const app = express();
+
+app.use(cookieParser());
 app.use(express.json());
 app.use("/api/v1", routes);
 
@@ -439,40 +442,39 @@ describe('Vote Controller', () => {
                 // Generate referrer user
                 const referrer = await testUser({ email: 'referrer@example.com', role: UserRole.User, verified: true }).save();
                 const referrerAuthAccessToken = await generateAuthAccessToken(referrer.id);
+                const refreshToken = generateRefreshToken(referrer.id);
 
                 // Referrer creates a share link token for the poll and share the link
                 const shareRes = await request(app)
                     .post(`/api/v1/polls/${poll.id}/public_poll_share_link`)
                     .set('Authorization', `Bearer ${referrerAuthAccessToken}`)
+                    .set('Cookie', `refreshToken=${refreshToken}`);
 
-                const { shareToken } = shareRes.body.data;
+                const { accessToken } = shareRes.body.data;
 
                 // Referred user navigate to poll shared from the referrer link
                 const shareLinkRes = await request(app)
-                    .get(`/api/v1/polls/public_poll_access/${shareToken}`);
+                    .get(`/api/v1/polls/public_poll_access/${accessToken}`);
 
                 // Get referral token from the cookie
-                const cookie = shareLinkRes.headers['set-cookie'][0];
-                const { referralToken } = cookie.match(/=(?<referralToken>.+?(?=;))/)?.groups || {};
+                const cookies: unknown = shareLinkRes.headers['set-cookie'];
+                const referrerToken = getCookieValue(cookies as string[], 'referrerToken');
 
-                const { decoded, error } = verifyToken(referralToken) as JwtTokenType;
-
-                if (error || typeof decoded === 'string' || !decoded?.pollId) {
-                    throw new Error('Invalid or expired access token');
-                }
+                const { decoded, error } = verifyToken(referrerToken as string) as JwtTokenType;
 
                 // Referred user signup with the referrerId
                 const referredUser = await testUser({
                     email: 'referreduser@example.com',
                     role: UserRole.User,
-                    referrerId: decoded.referrerId,
+                    referrerId: decoded?.referrerId,
                     verified: true
                 }).save();
 
                 // Referred user votes on the poll and the referrer gets 10 points
                 const voteResPromise = () => request(app)
                     .post(`/api/v1/polls/${poll.id}/votes`)
-                    .set('Authorization', `Bearer ${shareToken}`)
+                    .set('Authorization', `Bearer ${accessToken}`)
+                    .set('Cookie', `refreshToken=${refreshToken}`)
                     .send({
                         pollId: poll.id,
                         voterId: referredUser.id,
@@ -509,11 +511,13 @@ describe('Vote Controller', () => {
                     verified: true
                 }).save();
                 subscriberAccessToken = await generateAuthAccessToken(subscriber.id);
+                const refreshToken = generateRefreshToken(subscriber.id);
                 poll = await testPoll({ creatorId: subscriber.id, allowMultipleVotes: false, public: false }).save();
 
                 const inviteRes = await request(app)
                     .post(`/api/v1/polls/${poll.id}/invites`)
                     .set('Authorization', `Bearer ${subscriberAccessToken}`)
+                    .set('Cookie', `refreshToken=${refreshToken}`)
                     .send({ emails: ['test@example.com'], expiresIn: 1000 * 60 });
 
                 inviteAccessData = inviteRes.body.data.invites[0];
@@ -528,6 +532,7 @@ describe('Vote Controller', () => {
                 const res = await request(app)
                     .post(`/api/v1/polls/${pollAccessWithTokenData._id}/votes`)
                     .set('Authorization', `Bearer ${null}`)
+                    .set('Cookie', `refreshToken=${null}`)
                     .send({
                         pollId: pollAccessWithTokenData._id,
                         voterEthnicity: 'black',

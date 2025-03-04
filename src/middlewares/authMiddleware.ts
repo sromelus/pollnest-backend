@@ -15,13 +15,14 @@ interface AuthOptions {
 
 export const auth = ({ required = true }: AuthOptions = {}) => {
   return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    const token = req.headers['authorization']?.split(' ')[1];
-    const refreshToken = req.cookies?.['refresh-token'];
+    const authAccessToken = req.headers['authorization']?.split(' ')[1];
+    const refreshToken = req.cookies?.['refreshToken'];
+    const bothTokenValid = isValidTokenFormat(authAccessToken, refreshToken);
 
     if (!required) {
       try {
-        if (token) {
-          const { decoded, newAuthAccessToken } = await verifyAuthAccessToken(token, refreshToken);
+        if (bothTokenValid) {
+          const { decoded, newAuthAccessToken } = await verifyAuthAccessToken(authAccessToken as string, refreshToken as string);
           if (decoded) {
             req.currentUserId = decoded.currentUserId;
             req.role = decoded.role;
@@ -45,17 +46,17 @@ export const auth = ({ required = true }: AuthOptions = {}) => {
     }
 
     try {
-      if (!token) {
+      if (!bothTokenValid) {
         res.status(401).json({
           success: false,
-          message: 'No authentication token provided'
+          message: 'No authentication token provided or refresh token expired'
         });
         return;
       }
 
-      const { decoded: decoded2, newAuthAccessToken: newAuthAccessToken2 } = await verifyAuthAccessToken(token, refreshToken);
+      const { decoded, newAuthAccessToken } = await verifyAuthAccessToken(authAccessToken as string, refreshToken as string);
 
-      if (!decoded2 && !newAuthAccessToken2) {
+      if (!decoded && !newAuthAccessToken) {
         res.status(401).json({
           success: false,
           message: 'Invalid authentication token'
@@ -63,11 +64,11 @@ export const auth = ({ required = true }: AuthOptions = {}) => {
         return;
       }
 
-      if (newAuthAccessToken2) {
-        res.setHeader('New-Token', newAuthAccessToken2);
+      if (newAuthAccessToken) {
+        res.setHeader('New-Token', newAuthAccessToken);
       }
 
-      if (!decoded2 || typeof decoded2 !== 'object') {
+      if (!decoded || typeof decoded !== 'object') {
         res.status(401).json({
           success: false,
           message: 'Invalid token payload'
@@ -75,9 +76,9 @@ export const auth = ({ required = true }: AuthOptions = {}) => {
         return;
       }
 
-      req.currentUserId = decoded2.currentUserId;
-      req.role = decoded2.role;
-      req.token = token;
+      req.currentUserId = decoded.currentUserId;
+      req.role = decoded.role;
+      req.token = newAuthAccessToken;
 
       next();
       return;
@@ -91,3 +92,22 @@ export const auth = ({ required = true }: AuthOptions = {}) => {
     }
   };
 };
+
+function isValidTokenFormat(authAccessToken: string | undefined, refreshToken: string | undefined) {
+  // Check if either token is missing
+  if (!authAccessToken || !refreshToken) {
+    return false;
+  }
+
+  // Check token length and invalid content
+  if (
+    authAccessToken.length < 20 ||
+    authAccessToken.includes('undefined') ||
+    refreshToken.includes('undefined') ||
+    refreshToken.includes('null')
+  ) {
+    return false;
+  }
+
+  return true;
+}

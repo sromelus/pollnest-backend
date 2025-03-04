@@ -23,22 +23,31 @@ export type PrivatePollInvitePayload = {
     expiresIn?: number;
 };
 
-export async function generateAuthAccessToken(userId: string): Promise<string> {
+export async function generateAuthAccessToken(userId: string, expiresIn: string = '15m'): Promise<string> {
     const secret = config.jwtSecret as Secret;
     if (!secret) {
         throw new Error('JWT_SECRET is not configured');
     }
     const user = await User.findById(userId).select('role') as IUser;
 
-    return jwt.sign({ currentUserId: user.id, role: user.role}, secret, { expiresIn: '15m' });
+    return jwt.sign({ currentUserId: user.id, role: user.role}, secret, { expiresIn } as SignOptions);
 }
 
-export function generateRefreshToken(userId: string): string {
+export function generateReferrerToken(userId: string, expiresIn: string = '360d'): string {
+    const secret = config.jwtSecret as Secret;
+    if (!secret) {
+        throw new Error('JWT_SECRET is not configured');
+    }
+
+    return jwt.sign({ referrerId: userId}, secret, { expiresIn } as SignOptions);
+}
+
+export function generateRefreshToken(userId: string, expiresIn: string = '7d'): string {
     const secret = config.jwtRefreshSecret as Secret;
     if (!secret) {
         throw new Error('JWT_SECRET is not configured');
     }
-    return jwt.sign({ currentUserId: userId }, secret, { expiresIn: '30d' });
+    return jwt.sign({ currentUserId: userId }, secret, { expiresIn } as SignOptions);
 }
 
 export function generatePrivatePollInviteToken(payload: PrivatePollInvitePayload): string {
@@ -60,7 +69,11 @@ export function generatePublicPollShareToken(payload: { pollId: string; referrer
 
 export async function verifyAuthAccessToken(accessToken: string, refreshToken: string): Promise<JwtAuthAccessTokenType> {
     const secret = config.jwtSecret as Secret;
-    if (!secret) {
+    const refreshSecret = config.jwtRefreshSecret as Secret;
+
+
+
+    if (!secret || !refreshSecret) {
         throw new Error('JWT_SECRET is not configured');
     }
 
@@ -71,7 +84,7 @@ export async function verifyAuthAccessToken(accessToken: string, refreshToken: s
         // check if token is expired
         if (err?.name === 'TokenExpiredError') {
             try {
-                const refreshDecoded = jwt.verify(refreshToken, secret) as jwt.JwtPayload;
+                const refreshDecoded = jwt.verify(refreshToken, refreshSecret) as jwt.JwtPayload;
                 const newAuthAccessToken = await generateAuthAccessToken(refreshDecoded.currentUserId);
                 return { newAuthAccessToken, decoded: refreshDecoded, error: null };
             } catch (refreshErr) {

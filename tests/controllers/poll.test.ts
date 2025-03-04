@@ -5,6 +5,8 @@ import { testPoll, testUser } from "../factories";
 import routes from '../../src/routes';
 import { UserRole } from '../../src/models';
 import { Types } from 'mongoose';
+import { getCookieValue } from '../helpers/getCookieValue';
+import cookieParser from 'cookie-parser';
 
 beforeAll(async () => {
     await dbConnect();
@@ -19,6 +21,8 @@ afterAll(async () => {
 });
 
 const app = express();
+
+app.use(cookieParser());
 app.use(express.json());
 app.use('/api/v1', routes)
 
@@ -26,6 +30,7 @@ app.use('/api/v1', routes)
 describe('Poll Controller', () => {
     let authAccessToken: string;
     let creatorId: Types.ObjectId;
+    let refreshToken: string;
 
     beforeEach(async () => {
         const userAdmin = await testUser({ role: UserRole.Admin, verified: true }).save();
@@ -37,6 +42,8 @@ describe('Poll Controller', () => {
         });
 
         authAccessToken = loginRes.body.data.authAccessToken;
+        const cookies: unknown = loginRes.headers['set-cookie'];
+        refreshToken = getCookieValue(cookies as string[], 'refreshToken') as string;
     });
 
     describe('.listPolls', () => {
@@ -71,6 +78,8 @@ describe('Poll Controller', () => {
             });
 
             const { authAccessToken } = loginRes.body.data;
+            const cookies: unknown = loginRes.headers['set-cookie'];
+            const refreshToken = getCookieValue(cookies as string[], 'refreshToken');
 
             await testPoll({ creatorId, public: true }).save();
             await testPoll({ creatorId, public: false }).save();
@@ -78,7 +87,8 @@ describe('Poll Controller', () => {
 
             const res = await request(app)
                 .get(`/api/v1/polls`)
-                .set('Authorization', `Bearer ${authAccessToken}`);
+                .set('Authorization', `Bearer ${authAccessToken}`)
+                .set('Cookie', `refreshToken=${refreshToken}`);
 
             expect(res.status).toBe(200);
             expect(res.body.data.polls).toHaveLength(3);
@@ -100,7 +110,8 @@ describe('Poll Controller', () => {
             const poll = await testPoll({ creatorId, public: false}).save();
             const res = await request(app)
                 .get(`/api/v1/polls/${poll.id}`)
-                .set('Authorization', `Bearer ${authAccessToken}`);
+                .set('Authorization', `Bearer ${authAccessToken}`)
+                .set('Cookie', `refreshToken=${refreshToken}`);
 
             expect(res.status).toBe(200);
             expect(res.body.message).toBe('Poll fetched successfully');
@@ -115,11 +126,14 @@ describe('Poll Controller', () => {
             });
 
             const userSubscriber = await testUser({ email: 'subscriber@example.com', role: UserRole.Subscriber }).save();
+            const cookies: unknown = loginRes.headers['set-cookie'];
+            const refreshToken = getCookieValue(cookies as string[], 'refreshToken');
 
             const poll = await testPoll({ creatorId: userSubscriber.id, public: false }).save();
             const res = await request(app)
                 .get(`/api/v1/polls/${poll.id}`)
-                .set('Authorization', `Bearer ${loginRes.body.data.authAccessToken}`);
+                .set('Authorization', `Bearer ${loginRes.body.data.authAccessToken}`)
+                .set('Cookie', `refreshToken=${refreshToken}`);
 
             expect(res.status).toBe(200);
             expect(res.body.message).toBe('Poll fetched successfully');
@@ -166,7 +180,10 @@ describe('Poll Controller', () => {
 
     describe('.createPoll', () => {
         it('should create a poll', async () => {
-            const res = await request(app).post('/api/v1/polls').set('Authorization', `Bearer ${authAccessToken}`).send({
+            const res = await request(app).post('/api/v1/polls')
+            .set('Authorization', `Bearer ${authAccessToken}`)
+            .set('Cookie', `refreshToken=${refreshToken}`)
+            .send({
                 title: 'Test Poll',
                 description: 'This is a test poll',
                 pollOptions: [{image: 'trump_img', pollOptionText: 'trump', count: 0}, {image: 'kamala_img', pollOptionText: 'kamala', count: 0}],
@@ -178,7 +195,10 @@ describe('Poll Controller', () => {
         });
 
         it('should not create a poll when missing required fields', async () => {
-            const res = await request(app).post('/api/v1/polls').set('Authorization', `Bearer ${authAccessToken}`).send({
+            const res = await request(app).post('/api/v1/polls')
+            .set('Authorization', `Bearer ${authAccessToken}`)
+            .set('Cookie', `refreshToken=${refreshToken}`)
+            .send({
                 //missing fields
                 // title: 'Test Poll',
                 // description: 'This is a test poll',
@@ -204,7 +224,10 @@ describe('Poll Controller', () => {
         });
 
         it('should update a poll', async () => {
-            const res = await request(app).put(`/api/v1/polls/${pollId}`).set('Authorization', `Bearer ${authAccessToken}`).send({
+            const res = await request(app).put(`/api/v1/polls/${pollId}`)
+            .set('Authorization', `Bearer ${authAccessToken}`)
+            .set('Cookie', `refreshToken=${refreshToken}`)
+            .send({
                 title: 'Updated Poll',
                 description: 'This is an updated poll',
                 creatorId: creatorId,
@@ -226,7 +249,9 @@ describe('Poll Controller', () => {
         });
 
         it('should delete a poll', async () => {
-            const res = await request(app).delete(`/api/v1/polls/${pollId}`).set('Authorization', `Bearer ${authAccessToken}`);
+            const res = await request(app).delete(`/api/v1/polls/${pollId}`)
+            .set('Authorization', `Bearer ${authAccessToken}`)
+            .set('Cookie', `refreshToken=${refreshToken}`);
 
             expect(res.status).toBe(200);
             expect(res.body.message).toBe('Poll deleted successfully');

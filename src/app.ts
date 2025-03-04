@@ -39,7 +39,16 @@ const startServer = async () => {
       origins: config.allowedOrigins
     });
 
+    app.use(cookieParser());
+    app.use(express.json());
+    app.use(requestLogger);
+    // app.set('trust proxy', true);
+
     app.use(maintenanceMiddleware);
+
+    app.use('/health', healthRoutes);
+
+    app.use('/api/v1', routes);
 
     // Add error logging middleware
     app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -51,16 +60,6 @@ const startServer = async () => {
       });
       res.status(500).json({ error: 'Internal server error' });
     });
-
-    app.use(cookieParser());
-    app.use(express.json());
-    app.use(requestLogger);
-
-    // app.set('trust proxy', true);
-
-    app.use('/health', healthRoutes);
-
-    app.use('/api/v1', routes);
 
     app.listen(PORT, () => {
       logger.info('Server started successfully', {

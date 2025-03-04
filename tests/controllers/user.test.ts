@@ -3,6 +3,8 @@ import request from 'supertest';
 import { dbConnect, dbDisconnect, dropDatabase } from '../helpers/dbTestConfig';
 import routes from '../../src/routes';
 import { User } from '../../src/models';
+import cookieParser from 'cookie-parser';
+import { getCookieValue } from '../helpers/getCookieValue';
 
 beforeAll(async () => {
     await dbConnect();
@@ -18,11 +20,14 @@ afterAll(async () => {
 });
 
 const app = express();
+
+app.use(cookieParser());
 app.use(express.json());
 app.use('/api/v1', routes);
 
 describe('User Controller', () => {
     let authAccessToken: string;
+    let refreshToken: string;
     let userId: string;
 
     // Helper to create a test user before each test
@@ -42,13 +47,16 @@ describe('User Controller', () => {
 
         userId = user.id;
         authAccessToken = loginRes.body.data.authAccessToken;
+        const cookies: unknown = loginRes.headers['set-cookie'];
+        refreshToken = getCookieValue(cookies as string[], 'refreshToken') as string;
     });
 
     describe('.listUsers', () => {
         it('should get all users successfully', async () => {
             const res = await request(app)
                 .get('/api/v1/users')
-                .set('Authorization', `Bearer ${authAccessToken}`);
+                .set('Authorization', `Bearer ${authAccessToken}`)
+                .set('Cookie', `refreshToken=${refreshToken}`);
 
             expect(res.status).toBe(200);
             expect(res.body.message).toBe('Users fetched successfully');
@@ -61,7 +69,8 @@ describe('User Controller', () => {
         it('should get user profile successfully', async () => {
             const res = await request(app)
                 .get(`/api/v1/users/${userId}`)
-                .set('Authorization', `Bearer ${authAccessToken}`);
+                .set('Authorization', `Bearer ${authAccessToken}`)
+                .set('Cookie', `refreshToken=${refreshToken}`);
 
             expect(res.status).toBe(200);
             expect(res.body.message).toBe('User fetched successfully');
@@ -75,6 +84,7 @@ describe('User Controller', () => {
             const res = await request(app)
                 .post('/api/v1/users')
                 .set('Authorization', `Bearer ${authAccessToken}`)
+                .set('Cookie', `refreshToken=${refreshToken}`)
                 .send({
                     name: 'Jane Doe',
                     email: 'jane@example.com',
@@ -94,6 +104,7 @@ describe('User Controller', () => {
             const res = await request(app)
                 .post('/api/v1/users')
                 .set('Authorization', `Bearer ${authAccessToken}`)
+                .set('Cookie', `refreshToken=${refreshToken}`)
                 .send({
                     name: 'Jane Doe',
                     email: 'jane@example.com',
@@ -114,6 +125,7 @@ describe('User Controller', () => {
             const res = await request(app)
                 .put(`/api/v1/users/${userId}`)
                 .set('Authorization', `Bearer ${authAccessToken}`)
+                .set('Cookie', `refreshToken=${refreshToken}`)
                 .send({
                     name: 'John Updated',
                     email: 'john.updated@example.com'
@@ -129,6 +141,7 @@ describe('User Controller', () => {
             const res = await request(app)
                 .put(`/api/v1/users/${userId}`)
                 .set('Authorization', `Bearer ${authAccessToken}`)
+                .set('Cookie', `refreshToken=${refreshToken}`)
                 .send({
                     email: 'invalid-email'
                 });
@@ -142,7 +155,8 @@ describe('User Controller', () => {
         it('should delete user successfully', async () => {
             const res = await request(app)
                 .delete(`/api/v1/users/${userId}`)
-                .set('Authorization', `Bearer ${authAccessToken}`);
+                .set('Authorization', `Bearer ${authAccessToken}`)
+                .set('Cookie', `refreshToken=${refreshToken}`);
 
             expect(res.status).toBe(200);
             expect(res.body.message).toBe('User deleted successfully');
@@ -152,7 +166,8 @@ describe('User Controller', () => {
             const fakeId = '507f1f77bcf86cd799439011';
             const res = await request(app)
                 .delete(`/api/v1/users/${fakeId}`)
-                .set('Authorization', `Bearer ${authAccessToken}`);
+                .set('Authorization', `Bearer ${authAccessToken}`)
+                .set('Cookie', `refreshToken=${refreshToken}`);
 
             expect(res.status).toBe(404);
             expect(res.body.message).toBe('User not found');

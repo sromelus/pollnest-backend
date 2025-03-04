@@ -1,4 +1,4 @@
-import { RequestHandler, Response } from 'express';
+import { RequestHandler, Response, Request } from 'express';
 import { User, Vote, IUser } from '../models';
 import {
     generateAuthAccessToken,
@@ -44,7 +44,11 @@ export default class AuthController {
     });
 
     static logout: RequestHandler = tryCatch(async (req, res) => {
-        const currentUserId = (req as any).currentUserId;
+        const { currentUserId } = (req as any);
+
+        await User.findByIdAndUpdate(currentUserId, { lastLogoutAt: new Date() });
+
+        AuthController.unsetRefreshTokenCookie(res);
 
         res.json({ success: true, message: 'Logout successful' });
     });
@@ -73,13 +77,11 @@ export default class AuthController {
         const { name, email, password, verificationCode } = req.body;
         const { firstName, lastName } = splitFullName(name);
 
+        const { referrerToken } = req.cookies;
+
         // get referrerId from cookie if it exists
         let referrerId = null;
-        if (req.cookies) {
-            const { referrerToken } = req.cookies;
-
-            if (!referrerToken) return;
-
+        if (referrerToken) {
             const { decoded, error } = verifyToken(referrerToken) as JwtTokenType;
 
             if (error) {
@@ -87,7 +89,7 @@ export default class AuthController {
                 return;
             }
 
-            referrerId = decoded?.currentUserId ? new Types.ObjectId(decoded.currentUserId) : null;
+            referrerId = decoded?.referrerId ? Types.ObjectId.createFromHexString(decoded.referrerId) : null;
         }
 
         const user = await User.findOneAndUpdate({email, verificationCode}, {
@@ -150,12 +152,13 @@ export default class AuthController {
 
         const user = await User.findById(userId);
         if (!user) {
-            res.status(404).send({ success: false, message: 'User not found' });
+            res.status(404).json({ success: false, message: 'User not found' });
             return;
         }
 
         await user.deleteOne();
-        res.status(200).send({ success: true, message: 'User deleted successfully' });
+
+        res.status(200).json({ success: true, message: 'User deleted successfully' });
     });
 
     // Private methods
@@ -201,7 +204,7 @@ export default class AuthController {
         if (process.env.NODE_ENV === 'production') {
             await sendEmail(options);
         } else {
-            console.log('options', options);
+            // console.log('options', options);
         }
     }
 
@@ -209,7 +212,15 @@ export default class AuthController {
         res.cookie('refreshToken', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
+            maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+            sameSite: 'none',
+        });
+    }
+
+    private static unsetRefreshTokenCookie(res: Response): void {
+        res.clearCookie('refreshToken', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
             sameSite: 'none',
         });
     }

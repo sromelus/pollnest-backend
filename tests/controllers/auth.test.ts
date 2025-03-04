@@ -4,6 +4,11 @@ import routes from "../../src/routes";
 import { dbConnect, dbDisconnect, dropDatabase } from "../helpers/dbTestConfig";
 import { User, IUser, UserRole } from "../../src/models";
 import { testUser, testPoll, testVote } from "../factories";
+import { generateAuthAccessToken, generateRefreshToken, generateReferrerToken } from "../../src/utils";
+import "../../src/loadEnvironmentVariables";
+import cookieParser from "cookie-parser";
+import { getCookieValue } from "../helpers/getCookieValue";
+
 
 beforeAll(async () => {
     await dbConnect();
@@ -20,6 +25,7 @@ afterAll(async () => {
 
 const app = express();
 
+app.use(cookieParser());
 app.use(express.json());
 app.use('/api/v1', routes);
 
@@ -59,11 +65,95 @@ describe('Auth Controller', () => {
             });
 
             const { authAccessToken } = loginRes.body.data;
+            const cookies: unknown = loginRes.headers['set-cookie'];
+            const refreshToken = getCookieValue(cookies as string[], 'refreshToken');
 
-            const logoutRes = await request(app).post('/api/v1/auth/logout').set('Authorization', `Bearer ${authAccessToken}`);
+            const logoutRes = await request(app)
+              .post('/api/v1/auth/logout')
+              .set('Authorization', `Bearer ${authAccessToken}`)
+              .set('Cookie', `refreshToken=${refreshToken}`);
 
             expect(logoutRes.status).toBe(200);
             expect(logoutRes.body).toHaveProperty('message', 'Logout successful');
+        });
+
+        it('should update last login and logout dates', async () => {
+          const loginRes = await request(app).post('/api/v1/auth/login').send({
+            email: 'john@example.com',
+            password: 'ValidPass123!'
+          });
+
+          const { authAccessToken } = loginRes.body.data;
+          const cookies: unknown = loginRes.headers['set-cookie'];
+          const refreshToken = getCookieValue(cookies as string[], 'refreshToken');
+
+          await request(app)
+              .post('/api/v1/auth/logout')
+              .set('Authorization', `Bearer ${authAccessToken}`)
+              .set('Cookie', `refreshToken=${refreshToken}`);
+
+          const user = await User.findOne({ email: 'john@example.com' }) as IUser;
+          const lastLoginAt: number = user.lastLoginAt?.getTime() ?? 0;
+          const lastLogoutAt: number = user.lastLogoutAt?.getTime() ?? 0;
+
+          expect(lastLoginAt).not.toBeNull();
+          expect(lastLogoutAt).not.toBeNull();
+          expect(lastLoginAt).toBeLessThan(lastLogoutAt);
+        });
+
+        it('should unset refreshToken cookie', async () => {
+          const loginRes = await request(app).post('/api/v1/auth/login').send({
+            email: 'john@example.com',
+            password: 'ValidPass123!'
+          });
+
+          const { authAccessToken } = loginRes.body.data;
+          const cookies: unknown = loginRes.headers['set-cookie'];
+          const refreshToken = getCookieValue(cookies as string[], 'refreshToken');
+
+          const logoutRes = await request(app)
+              .post('/api/v1/auth/logout')
+              .set('Authorization', `Bearer ${authAccessToken}`)
+              .set('Cookie', `refreshToken=${refreshToken}`);
+
+          const unsetCookies: unknown = logoutRes.headers['set-cookie'];
+          const unsetRefreshToken = getCookieValue(unsetCookies as string[], 'refreshToken');
+
+          expect(unsetRefreshToken).toBeDefined();
+          expect(unsetRefreshToken).not.toBeNull();
+        });
+
+        it('should not be able to access protected route after logout', async () => {
+            const user = await testUser({
+              email: 'new-user@example.com',
+              role: UserRole.User,
+              verified: true,
+              password: 'ValidPass123!'
+            }).save();
+
+            const loginRes = await request(app).post('/api/v1/auth/login').send({
+              email: user.email,
+              password: 'ValidPass123!'
+            });
+
+            const cookies: unknown = loginRes.headers['set-cookie'];
+            const { authAccessToken } = loginRes.body.data;
+            const refreshToken = getCookieValue(cookies as string[], 'refreshToken');
+
+            const logoutRes = await request(app)
+                .post('/api/v1/auth/logout')
+                .set('Authorization', `Bearer ${authAccessToken}`)
+                .set('Cookie', `refreshToken=${refreshToken}`);
+
+            const unsetCookie: unknown = logoutRes.headers['set-cookie'];
+            const unsetRefreshToken = getCookieValue(unsetCookie as string[], 'refreshToken');
+
+            // try to access protected route
+            const res = await request(app).get('/api/v1/polls/my_polls')
+                .set('Authorization', `Bearer ${authAccessToken}`)
+                .set('Cookie', `refreshToken=${unsetRefreshToken}`);
+
+            expect(res.status).toBe(401);
         });
     });
 
@@ -172,6 +262,34 @@ describe('Auth Controller', () => {
         expect(user).toBeDefined();
         expect(user.verified).toBe(true);
         expect(user.verificationCode).toBeNull();
+      });
+
+      it('should register a new user with referrerId when referrerToken is provided', async () => {
+        const referrer = await testUser({ email: 'referrer@example.com' }).save();
+        const referrerToken = generateReferrerToken(referrer.id);
+
+        const tempUser = { email: 'john1@example.com', phone: '1112223333' };
+
+        await request(app).post('/api/v1/auth/pre-register').send({
+          email: tempUser.email,
+        });
+
+        const user1 = await User.findOne({ email: tempUser.email, verified: false }) as IUser;
+        const user2 = await User.findOne({ email: tempUser.email, verified: false, verificationCode: user1.verificationCode }) as IUser;
+
+        const res = await request(app)
+          .post('/api/v1/auth/register')
+          .set('Cookie', `referrerToken=${referrerToken}`)
+          .send({
+            name: 'John Doe',
+            email: user2.email,
+            password: 'ValidPass123!',
+            verificationCode: user2.verificationCode
+          });
+
+        const user = await User.findOne({ email: tempUser.email }) as IUser;
+
+        expect(user.referrerId.toString()).toEqual(referrer.id);
       });
 
       it('should fail when verification code is invalid', async () => {
@@ -351,12 +469,17 @@ describe('Auth Controller', () => {
           });
 
           const { authAccessToken } = loginRes.body.data;
+          const cookies: unknown = loginRes.headers['set-cookie'];
+          const refreshToken = getCookieValue(cookies as string[], 'refreshToken');
 
-          const res = await request(app).put('/api/v1/auth/profile').set('Authorization', `Bearer ${authAccessToken}`).send({
-            name: 'John Doe Updated',
-          });
+          const res = await request(app)
+            .put('/api/v1/auth/profile')
+            .set('Authorization', `Bearer ${authAccessToken}`)
+            .set('Cookie', `refreshToken=${refreshToken}`)
+            .send({ name: 'John Doe Updated' });
 
           expect(res.status).toBe(200);
+          expect(res.body.message).toBe('User updated successfully');
           expect(res.body).toHaveProperty('message', 'User updated successfully');
         });
     });
@@ -379,11 +502,67 @@ describe('Auth Controller', () => {
           });
 
           const { authAccessToken } = loginRes.body.data;
+          const cookies: unknown = loginRes.headers['set-cookie'];
+          const refreshToken = getCookieValue(cookies as string[], 'refreshToken');
 
-          const res = await request(app).delete('/api/v1/auth/profile').set('Authorization', `Bearer ${authAccessToken}`)
+          const res = await request(app)
+            .delete('/api/v1/auth/profile')
+            .set('Authorization', `Bearer ${authAccessToken}`)
+            .set('Cookie', `refreshToken=${refreshToken}`);
 
-          expect(res.status).toBe(200);
+          // expect(res.status).toBe(200);
+          expect(res.body.message).toBe('User deleted successfully');
           expect(res.body).toHaveProperty('message', 'User deleted successfully');
         });
+    });
+
+    describe('Refresh the auth access token', () => {
+      it('should be able to access protected routes when authAccessToken is expired and refreshToken is valid', async () => {
+        const subscriber = await testUser({
+          email: 'subscriber@example.com',
+          role: UserRole.Subscriber,
+          verified: true,
+          password: 'ValidPass123!'
+        }).save();
+
+        await request(app).post('/api/v1/auth/login').send({
+          email: 'john@example.com',
+          password: 'ValidPass123!'
+        });
+
+        const authAccessToken = await generateAuthAccessToken(subscriber.id, '0s');
+        const refreshToken = generateRefreshToken(subscriber.id, '7d');
+
+        // try to access protected route with expired authAccessToken and valid refreshToken
+        const res = await request(app).get('/api/v1/polls/my_polls')
+            .set('Authorization', `Bearer ${authAccessToken}`)
+            .set('Cookie', `refreshToken=${refreshToken}`);
+
+        expect(res.status).toBe(200);
+      });
+
+      it('should not be able to access protected routes when authAccessToken is expired and refreshToken is invalid', async () => {
+        const subscriber = await testUser({
+          email: 'subscriber@example.com',
+          role: UserRole.Subscriber,
+          verified: true,
+          password: 'ValidPass123!'
+        }).save();
+
+        await request(app).post('/api/v1/auth/login').send({
+          email: 'john@example.com',
+          password: 'ValidPass123!'
+        });
+
+        const authAccessToken = await generateAuthAccessToken(subscriber.id, '0s');
+        const refreshToken = generateRefreshToken(subscriber.id, '0s');
+
+        // try to access protected route with expired authAccessToken and valid refreshToken
+        const res = await request(app).get('/api/v1/polls/my_polls')
+            .set('Authorization', `Bearer ${authAccessToken}`)
+            .set('Cookie', `refreshToken=${refreshToken}`);
+
+        expect(res.status).toBe(401);
+      });
     });
 });

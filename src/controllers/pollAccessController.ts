@@ -139,8 +139,8 @@ export default class PollAccessController {
             success: true,
             message: 'Poll share link generated successfully',
             data: {
-                shareToken: token,
-                shareLink: `${process.env.FRONTEND_URL}/polls/${token}`
+                accessToken: token,
+                accessLink: `${process.env.FRONTEND_URL}/polls/${token}`
             }
         });
     })

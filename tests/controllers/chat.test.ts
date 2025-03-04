@@ -5,7 +5,8 @@ import { testPoll, testUser } from "../factories";
 import routes from '../../src/routes';
 import { UserRole, IPoll } from '../../src/models';
 import { Types } from 'mongoose';
-import { generateAuthAccessToken } from '../../src/utils';
+import { generateAuthAccessToken, generateRefreshToken } from '../../src/utils';
+import cookieParser from 'cookie-parser';
 
 beforeAll(async () => {
     await dbConnect();
@@ -20,6 +21,8 @@ afterAll(async () => {
 });
 
 const app = express();
+
+app.use(cookieParser());
 app.use(express.json());
 app.use('/api/v1', routes)
 
@@ -28,6 +31,7 @@ describe('Chat Controller', () => {
     let userId: Types.ObjectId;
     let userId2: Types.ObjectId;
     let authAccessToken: string;
+    let refreshToken: string;
 
     beforeEach(async () => {
         const user = await testUser({ email: 'admin@example.com', role: UserRole.Admin, verified: true }).save();
@@ -35,6 +39,7 @@ describe('Chat Controller', () => {
         userId = user.id;
         userId2 = user2.id;
         authAccessToken = await generateAuthAccessToken(user.id);
+        refreshToken = generateRefreshToken(user.id);
     });
 
     describe('Poll Chat', () => {
@@ -67,17 +72,19 @@ describe('Chat Controller', () => {
         it('should add a new message to a poll chat', async () => {
             const messagePromises = [
                 request(app).post(`/api/v1/polls/${pollId}/chat/message`)
-                .set('Authorization', `Bearer ${authAccessToken}`)
-                .send({
-                    content: 'This is a test message',
-                    userId: userId,
-                }),
+                            .set('Authorization', `Bearer ${authAccessToken}`)
+                            .set('Cookie', `refreshToken=${refreshToken}`)
+                            .send({
+                                    content: 'This is a test message',
+                                    userId: userId,
+                            }),
                 request(app).post(`/api/v1/polls/${pollId}/chat/message`)
-                .set('Authorization', `Bearer ${authAccessToken}`)
-                .send({
-                    content: 'This is a test message 2',
-                    userId: userId2,
-                })
+                            .set('Authorization', `Bearer ${authAccessToken}`)
+                            .set('Cookie', `refreshToken=${refreshToken}`)
+                            .send({
+                                content: 'This is a test message 2',
+                                userId: userId2,
+                            })
             ];
 
             const [messageRes, messageRes2] = await Promise.all(messagePromises);
