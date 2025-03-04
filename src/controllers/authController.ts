@@ -25,15 +25,17 @@ export default class AuthController {
         const authAccessToken = await generateAuthAccessToken(user.id);
         const refreshToken = generateRefreshToken(user.id);
 
-        // Set refresh token in HTTP-only cookie
+        // Set refreshToken in res as a HTTP-only cookie
         AuthController.setRefreshTokenCookie(res, refreshToken);
 
-        // Return access token in response body
+        // Set authAccessToken in res as a header
+        res.setHeader('auth-access-token', authAccessToken);
+
+        // Return user data without the token in body
         res.json({
             success: true,
             message: 'Login successful',
             data: {
-                authAccessToken,
                 user: {
                     id: user.id,
                     email: user.email,

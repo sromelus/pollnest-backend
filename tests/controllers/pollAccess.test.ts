@@ -89,12 +89,12 @@ describe('PollAccessController', () => {
 
         it('should not allow non-subscribers to access a poll that does not belong to them', async () => {
             const nonSubscriber = await testUser({ email: 'non-subscriber@example.com', verified: true }).save();
-            const resLogin = await request(app)
+            const nonSubsLoginRes = await request(app)
                 .post('/api/v1/auth/login')
                 .send({ email: nonSubscriber.email, password: 'ValidPass123!' });
 
-            const nonSubscriberAuthAccessToken = resLogin.body.data.authAccessToken;
-            const cookies: unknown = resLogin.headers['set-cookie'];
+            const nonSubscriberAuthAccessToken = nonSubsLoginRes.headers['auth-access-token'];
+            const cookies: unknown = nonSubsLoginRes.headers['set-cookie'];
             const nonSubscriberRefreshToken = getCookieValue(cookies as string[], 'refreshToken');
 
             const res = await request(app)

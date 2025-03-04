@@ -41,7 +41,7 @@ describe('Poll Controller', () => {
             password: testUser({}).password
         });
 
-        authAccessToken = loginRes.body.data.authAccessToken;
+        authAccessToken = loginRes.headers['auth-access-token'];
         const cookies: unknown = loginRes.headers['set-cookie'];
         refreshToken = getCookieValue(cookies as string[], 'refreshToken') as string;
     });
@@ -77,7 +77,7 @@ describe('Poll Controller', () => {
                 password: testUser({}).password
             });
 
-            const { authAccessToken } = loginRes.body.data;
+            const authAccessToken = loginRes.headers['auth-access-token'];
             const cookies: unknown = loginRes.headers['set-cookie'];
             const refreshToken = getCookieValue(cookies as string[], 'refreshToken');
 
@@ -120,19 +120,19 @@ describe('Poll Controller', () => {
 
         it('should show private poll if user is admin', async () => {
             const userAdmin = await testUser({ email: 'admin@example.com', role: UserRole.Admin, verified: true }).save();
-            const loginRes = await request(app).post('/api/v1/auth/login').send({
+            const adminLoginRes = await request(app).post('/api/v1/auth/login').send({
                 email: userAdmin.email,
                 password: testUser({}).password
             });
 
             const userSubscriber = await testUser({ email: 'subscriber@example.com', role: UserRole.Subscriber }).save();
-            const cookies: unknown = loginRes.headers['set-cookie'];
+            const cookies: unknown = adminLoginRes.headers['set-cookie'];
             const refreshToken = getCookieValue(cookies as string[], 'refreshToken');
 
             const poll = await testPoll({ creatorId: userSubscriber.id, public: false }).save();
             const res = await request(app)
                 .get(`/api/v1/polls/${poll.id}`)
-                .set('Authorization', `Bearer ${loginRes.body.data.authAccessToken}`)
+                .set('Authorization', `Bearer ${adminLoginRes.headers['auth-access-token']}`)
                 .set('Cookie', `refreshToken=${refreshToken}`);
 
             expect(res.status).toBe(200);
@@ -143,7 +143,7 @@ describe('Poll Controller', () => {
         it('should not show private poll if user is not creator or admin', async () => {
             const userSubscriber = await testUser({ email: 'subscriber@example.com', role: UserRole.Subscriber, verified: true }).save();
 
-            const loginRes = await request(app).post('/api/v1/auth/login').send({
+            const subsLoginRes = await request(app).post('/api/v1/auth/login').send({
                 email: userSubscriber.email,
                 password: testUser({}).password
             });
@@ -151,7 +151,7 @@ describe('Poll Controller', () => {
             const poll = await testPoll({ creatorId, public: false }).save();
             const res = await request(app)
                 .get(`/api/v1/polls/${poll.id}`)
-                .set('Authorization', `Bearer ${loginRes.body.data.authAccessToken}`);
+                .set('Authorization', `Bearer ${subsLoginRes.headers['auth-access-token']}`);
 
             expect(res.status).toBe(403);
             expect(res.body.message).toBe('Poll is not public');

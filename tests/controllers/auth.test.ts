@@ -8,6 +8,7 @@ import { generateAuthAccessToken, generateRefreshToken, generateReferrerToken } 
 import "../../src/loadEnvironmentVariables";
 import cookieParser from "cookie-parser";
 import { getCookieValue } from "../helpers/getCookieValue";
+import { decodeToken } from "../../src/utils/jwtManager";
 
 
 beforeAll(async () => {
@@ -43,7 +44,7 @@ describe('Auth Controller', () => {
 
             expect(res.status).toBe(200);
             expect(res.body.message).toBe('Login successful');
-            expect(res.body.data).toHaveProperty('authAccessToken');
+            expect(res.headers['auth-access-token']).toBeDefined();
         });
 
         it('should not login user with invalid credentials', async () => {
@@ -64,7 +65,7 @@ describe('Auth Controller', () => {
                 password: 'ValidPass123!'
             });
 
-            const { authAccessToken } = loginRes.body.data;
+            const authAccessToken = loginRes.headers['auth-access-token'];
             const cookies: unknown = loginRes.headers['set-cookie'];
             const refreshToken = getCookieValue(cookies as string[], 'refreshToken');
 
@@ -83,7 +84,7 @@ describe('Auth Controller', () => {
             password: 'ValidPass123!'
           });
 
-          const { authAccessToken } = loginRes.body.data;
+          const authAccessToken = loginRes.headers['auth-access-token'];
           const cookies: unknown = loginRes.headers['set-cookie'];
           const refreshToken = getCookieValue(cookies as string[], 'refreshToken');
 
@@ -107,7 +108,7 @@ describe('Auth Controller', () => {
             password: 'ValidPass123!'
           });
 
-          const { authAccessToken } = loginRes.body.data;
+          const authAccessToken = loginRes.headers['auth-access-token'];
           const cookies: unknown = loginRes.headers['set-cookie'];
           const refreshToken = getCookieValue(cookies as string[], 'refreshToken');
 
@@ -137,7 +138,7 @@ describe('Auth Controller', () => {
             });
 
             const cookies: unknown = loginRes.headers['set-cookie'];
-            const { authAccessToken } = loginRes.body.data;
+            const authAccessToken = loginRes.headers['auth-access-token'];
             const refreshToken = getCookieValue(cookies as string[], 'refreshToken');
 
             const logoutRes = await request(app)
@@ -468,7 +469,7 @@ describe('Auth Controller', () => {
             password: 'ValidPass123!'
           });
 
-          const { authAccessToken } = loginRes.body.data;
+          const authAccessToken = loginRes.headers['auth-access-token'];
           const cookies: unknown = loginRes.headers['set-cookie'];
           const refreshToken = getCookieValue(cookies as string[], 'refreshToken');
 
@@ -501,7 +502,7 @@ describe('Auth Controller', () => {
             password: 'ValidPass123!'
           });
 
-          const { authAccessToken } = loginRes.body.data;
+          const authAccessToken = loginRes.headers['auth-access-token'];
           const cookies: unknown = loginRes.headers['set-cookie'];
           const refreshToken = getCookieValue(cookies as string[], 'refreshToken');
 
@@ -516,7 +517,7 @@ describe('Auth Controller', () => {
         });
     });
 
-    describe('Refresh the auth access token', () => {
+    describe('Auth access token refresh', () => {
       it('should be able to access protected routes when authAccessToken is expired and refreshToken is valid', async () => {
         const subscriber = await testUser({
           email: 'subscriber@example.com',
@@ -539,6 +540,9 @@ describe('Auth Controller', () => {
             .set('Cookie', `refreshToken=${refreshToken}`);
 
         expect(res.status).toBe(200);
+        // since the authAccessToken is expired,
+        // expect the authAccessToken to be reset and updated in the header
+        expect(res.headers['auth-access-token']).toBeDefined();
       });
 
       it('should not be able to access protected routes when authAccessToken is expired and refreshToken is invalid', async () => {
@@ -563,6 +567,38 @@ describe('Auth Controller', () => {
             .set('Cookie', `refreshToken=${refreshToken}`);
 
         expect(res.status).toBe(401);
+      });
+
+      it('should be have the same userId as the authAccessToken', async () => {
+        const subscriber = await testUser({
+          email: 'subscriber@example.com',
+          role: UserRole.Subscriber,
+          verified: true,
+          password: 'ValidPass123!'
+        }).save();
+  
+        const authAccessToken = await generateAuthAccessToken(subscriber.id);
+        const refreshToken = generateRefreshToken(subscriber.id);
+  
+        const decodedAuthAccessToken = decodeToken(authAccessToken);
+        const decodedRefreshToken = decodeToken(refreshToken);
+  
+        expect(decodedAuthAccessToken.userId).toBe(decodedRefreshToken.userId);
+      });
+
+      it('should not be able to access protected routes when refreshToken userId is different from authAccessToken userId', async () => {
+        const janeUser = await testUser({ email: 'janed@example.com', password: 'ValidPass123!' }).save();
+        const johnUser = await testUser({ email: 'johnd@example.com', password: 'ValidPass123!' }).save();
+  
+        const authAccessToken = await generateAuthAccessToken(johnUser.id, '0s');
+        const janeRefreshToken = generateRefreshToken(janeUser.id, '3d');
+  
+        const logoutRes = await request(app)
+          .post('/api/v1/auth/logout')
+          .set('Authorization', `Bearer ${authAccessToken}`)
+          .set('Cookie', `refreshToken=${janeRefreshToken}`);
+  
+        expect(logoutRes.status).toBe(403);
       });
     });
 });

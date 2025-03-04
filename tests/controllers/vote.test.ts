@@ -46,7 +46,7 @@ describe('Vote Controller', () => {
             password: testUser({}).password
         });
 
-        accessToken = loginRes.body.data.accessToken;
+        accessToken = loginRes.headers['auth-access-token'];
     });
 
     describe('.createVote', () => {
@@ -451,6 +451,8 @@ describe('Vote Controller', () => {
                     .set('Cookie', `refreshToken=${refreshToken}`);
 
                 const { accessToken } = shareRes.body.data;
+
+                console.log('accessToken', accessToken);
 
                 // Referred user navigate to poll shared from the referrer link
                 const shareLinkRes = await request(app)

@@ -54,7 +54,15 @@ export const auth = ({ required = true }: AuthOptions = {}) => {
         return;
       }
 
-      const { decoded, newAuthAccessToken } = await verifyAuthAccessToken(authAccessToken as string, refreshToken as string);
+      const { decoded, newAuthAccessToken, error } = await verifyAuthAccessToken(authAccessToken as string, refreshToken as string);
+
+      if (error?.name === 'TokenMismatchError') {
+        res.status(403).json({
+          success: false,
+          message: 'Invalid refreshToken'
+        });
+        return;
+      }
 
       if (!decoded && !newAuthAccessToken) {
         res.status(401).json({
@@ -65,7 +73,9 @@ export const auth = ({ required = true }: AuthOptions = {}) => {
       }
 
       if (newAuthAccessToken) {
-        res.setHeader('New-Token', newAuthAccessToken);
+        //when the authAccessToken is expired,
+        // set the updated authAccessToken in header to replace the expired one
+        res.setHeader('auth-access-token', newAuthAccessToken);
       }
 
       if (!decoded || typeof decoded !== 'object') {

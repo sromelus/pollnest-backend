@@ -46,7 +46,7 @@ describe('User Controller', () => {
         });
 
         userId = user.id;
-        authAccessToken = loginRes.body.data.authAccessToken;
+        authAccessToken = loginRes.headers['auth-access-token'];
         const cookies: unknown = loginRes.headers['set-cookie'];
         refreshToken = getCookieValue(cookies as string[], 'refreshToken') as string;
     });

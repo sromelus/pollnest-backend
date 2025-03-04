@@ -71,8 +71,6 @@ export async function verifyAuthAccessToken(accessToken: string, refreshToken: s
     const secret = config.jwtSecret as Secret;
     const refreshSecret = config.jwtRefreshSecret as Secret;
 
-
-
     if (!secret || !refreshSecret) {
         throw new Error('JWT_SECRET is not configured');
     }
@@ -85,9 +83,18 @@ export async function verifyAuthAccessToken(accessToken: string, refreshToken: s
         if (err?.name === 'TokenExpiredError') {
             try {
                 const refreshDecoded = jwt.verify(refreshToken, refreshSecret) as jwt.JwtPayload;
+                const expiredAccessTokenDecoded = jwt.decode(accessToken) as jwt.JwtPayload;
+
+                // Verify both tokens belong to the same user
+                if (expiredAccessTokenDecoded.currentUserId !== refreshDecoded.currentUserId) {
+                    const error = new Error('Token mismatch');
+                    error.name = 'TokenMismatchError';
+                    throw error;
+                }
+
                 const newAuthAccessToken = await generateAuthAccessToken(refreshDecoded.currentUserId);
                 return { newAuthAccessToken, decoded: refreshDecoded, error: null };
-            } catch (refreshErr) {
+            } catch (refreshErr: any) {
                 return { newAuthAccessToken: null, decoded: null, error: refreshErr as Error };
             }
         }
