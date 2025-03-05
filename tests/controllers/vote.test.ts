@@ -452,8 +452,6 @@ describe('Vote Controller', () => {
 
                 const { accessToken } = shareRes.body.data;
 
-                console.log('accessToken', accessToken);
-
                 // Referred user navigate to poll shared from the referrer link
                 const shareLinkRes = await request(app)
                     .get(`/api/v1/polls/public_poll_access/${accessToken}`);

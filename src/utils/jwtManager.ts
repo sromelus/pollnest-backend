@@ -1,6 +1,7 @@
 import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 import { envConfig } from '../config/environment';
 import { User, IUser } from '../models';
+import { JWT_EXPIRATION } from '../constants/jwt';
 // import { blacklist } from '../services/blacklist';
 
 const config = envConfig[process.env.NODE_ENV as string];
@@ -23,7 +24,7 @@ export type PrivatePollInvitePayload = {
     expiresIn?: number;
 };
 
-export async function generateAuthAccessToken(userId: string, expiresIn: string = '15m'): Promise<string> {
+export async function generateAuthAccessToken(userId: string, expiresIn: string = JWT_EXPIRATION.ACCESS_TOKEN): Promise<string> {
     const secret = config.jwtSecret as Secret;
     if (!secret) {
         throw new Error('JWT_SECRET is not configured');
@@ -33,7 +34,7 @@ export async function generateAuthAccessToken(userId: string, expiresIn: string 
     return jwt.sign({ currentUserId: user.id, role: user.role}, secret, { expiresIn } as SignOptions);
 }
 
-export function generateReferrerToken(userId: string, expiresIn: string = '360d'): string {
+export function generateReferrerToken(userId: string, expiresIn: string = '0s'): string {
     const secret = config.jwtSecret as Secret;
     if (!secret) {
         throw new Error('JWT_SECRET is not configured');
@@ -42,7 +43,7 @@ export function generateReferrerToken(userId: string, expiresIn: string = '360d'
     return jwt.sign({ referrerId: userId}, secret, { expiresIn } as SignOptions);
 }
 
-export function generateRefreshToken(userId: string, expiresIn: string = '7d'): string {
+export function generateRefreshToken(userId: string, expiresIn: string = JWT_EXPIRATION.REFRESH_TOKEN): string {
     const secret = config.jwtRefreshSecret as Secret;
     if (!secret) {
         throw new Error('JWT_SECRET is not configured');
@@ -50,13 +51,13 @@ export function generateRefreshToken(userId: string, expiresIn: string = '7d'): 
     return jwt.sign({ currentUserId: userId }, secret, { expiresIn } as SignOptions);
 }
 
-export function generatePrivatePollInviteToken(payload: PrivatePollInvitePayload): string {
+export function generatePrivatePollInviteToken(payload: PrivatePollInvitePayload, expiresIn: string = JWT_EXPIRATION.INVITE_TOKEN): string {
     const secret = config.jwtSecret as Secret;
     if (!secret) {
         throw new Error('JWT_SECRET is not configured');
     }
 
-    return jwt.sign(payload, secret, { expiresIn: `${payload.expiresIn || '7d'}` });
+    return jwt.sign(payload, secret, { expiresIn } as SignOptions);
 }
 
 export function generatePublicPollShareToken(payload: { pollId: string; referrerId: string }): string {

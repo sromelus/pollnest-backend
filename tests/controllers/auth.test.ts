@@ -4,11 +4,12 @@ import routes from "../../src/routes";
 import { dbConnect, dbDisconnect, dropDatabase } from "../helpers/dbTestConfig";
 import { User, IUser, UserRole } from "../../src/models";
 import { testUser, testPoll, testVote } from "../factories";
-import { generateAuthAccessToken, generateRefreshToken, generateReferrerToken } from "../../src/utils";
+import { generateAuthAccessToken, generateRefreshToken, generatePublicPollShareToken } from "../../src/utils";
 import "../../src/loadEnvironmentVariables";
 import cookieParser from "cookie-parser";
 import { getCookieValue } from "../helpers/getCookieValue";
 import { decodeToken } from "../../src/utils/jwtManager";
+import { JWT_EXPIRATION } from "../../src/constants/jwt";
 
 
 beforeAll(async () => {
@@ -266,8 +267,9 @@ describe('Auth Controller', () => {
       });
 
       it('should register a new user with referrerId when referrerToken is provided', async () => {
-        const referrer = await testUser({ email: 'referrer@example.com' }).save();
-        const referrerToken = generateReferrerToken(referrer.id);
+        const referrer = await testUser({ email: 'referrer@example.com', verified: true, role: UserRole.Subscriber }).save();
+        const poll = await testPoll({ creatorId: referrer.id }).save();
+        const referrerToken = generatePublicPollShareToken({ pollId: poll.id, referrerId: referrer.id });
 
         const tempUser = { email: 'john1@example.com', phone: '1112223333' };
 
@@ -278,7 +280,7 @@ describe('Auth Controller', () => {
         const user1 = await User.findOne({ email: tempUser.email, verified: false }) as IUser;
         const user2 = await User.findOne({ email: tempUser.email, verified: false, verificationCode: user1.verificationCode }) as IUser;
 
-        const res = await request(app)
+        await request(app)
           .post('/api/v1/auth/register')
           .set('Cookie', `referrerToken=${referrerToken}`)
           .send({
@@ -532,7 +534,7 @@ describe('Auth Controller', () => {
         });
 
         const authAccessToken = await generateAuthAccessToken(subscriber.id, '0s');
-        const refreshToken = generateRefreshToken(subscriber.id, '7d');
+        const refreshToken = generateRefreshToken(subscriber.id, JWT_EXPIRATION.REFRESH_TOKEN);
 
         // try to access protected route with expired authAccessToken and valid refreshToken
         const res = await request(app).get('/api/v1/polls/my_polls')

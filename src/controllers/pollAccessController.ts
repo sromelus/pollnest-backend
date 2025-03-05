@@ -68,14 +68,12 @@ export default class PollAccessController {
                     pollId: poll.id,
                     email,
                     type: 'private-poll-invite',
-                    expiresIn
-                });
+                }, expiresIn);
 
                 return {
                     email,
                     inviteAccessToken: token,
                     inviteAccessLink: `${process.env.FRONTEND_URL}/poll/${token}`,
-                    expiresIn
                 };
             }));
 
@@ -93,7 +91,6 @@ export default class PollAccessController {
 
             // Verify accessToken
             const { decoded, error } = verifyToken(accessToken) as JwtTokenType;
-
             if (error || typeof decoded === 'string' || decoded?.type !== 'private-poll-invite') {
                 res.status(403).json({
                     success: false,

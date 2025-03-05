@@ -246,7 +246,7 @@ describe('PollAccessController', () => {
                   .post(`/api/v1/polls/${privatePoll.id}/invites`)
                   .set('Authorization', `Bearer ${authAccessToken}`)
                   .set('Cookie', `refreshToken=${refreshToken}`)
-                  .send({ emails: ['test@example.com'], expiresIn: '0' });
+                  .send({ emails: ['test@example.com'], expiresIn: '0s' });
 
             const { inviteAccessToken } = inviteRes.body.data.invites[0];
 
