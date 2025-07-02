@@ -17,16 +17,16 @@ export interface IUser extends Document {
     name: string;
     comparePassword(password: string): Promise<boolean>;
     userIp: string;
-    referrerId: Types.ObjectId;
+    referrerId: Types.ObjectId | null;
     votes: () => Promise<IVote[]>;
     points: number;
     voteCount: number;
     referralPoints: number;
     phone: string;
     verified: boolean;
-    verificationCode: string;
-    lastLoginAt?: Date;
-    lastLogoutAt?: Date;
+    verificationCode: string | null;
+    lastLoginAt?: Date | null;
+    lastLogoutAt?: Date | null;
 }
 
 const UserSchema = new Schema<IUser>({

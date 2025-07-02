@@ -94,19 +94,21 @@ export default class AuthController {
             referrerId = decoded?.referrerId ? Types.ObjectId.createFromHexString(decoded.referrerId) : null;
         }
 
-        const user = await User.findOneAndUpdate({email, verificationCode}, {
-            firstName,
-            lastName,
-            password,
-            referrerId,
-            verified: true,
-            verificationCode: null
-        }, { new: true, runValidators: true });
+        const user = await User.findOne({email, verificationCode});
 
         if (!user) {
             res.status(400).send({ success: false, message: 'Invalid email or verification code' });
             return;
         }
+
+        user.firstName = firstName;
+        user.lastName = lastName;
+        user.password = password;
+        user.referrerId = referrerId;
+        user.verified = true;
+        user.verificationCode = null;
+
+        await user.save();
 
         // Match new user with existing votes
         const voterLocInfo = voterLocationInfo(req);
@@ -166,6 +168,7 @@ export default class AuthController {
     // Private methods
     private static async validateCredentials(email: string, password: string): Promise<IUser | null> {
         const user = await User.findOne({ email, verified: true }).select('+password');
+        console.log('*****user*****', user, user?.password)
         if (!user || !await user.comparePassword(password)) {
             return null;
         }
@@ -179,7 +182,7 @@ export default class AuthController {
         return Math.floor(100000 + Math.random() * 900000).toString();
     }
 
-    static async preRegisterUserWithEmail(email: string, verificationCode: string | null): Promise<IUser> {
+    static async preRegisterUserWithEmail(email: string, verificationCode:    string | null): Promise<IUser> {
         return await User.findOneAndUpdate(
             { email },
             {
@@ -206,7 +209,7 @@ export default class AuthController {
         if (process.env.NODE_ENV === 'production') {
             await sendEmail(options);
         } else {
-            // console.log('options', options);
+            console.log('options', options);
         }
     }
 
