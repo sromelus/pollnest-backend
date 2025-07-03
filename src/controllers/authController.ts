@@ -30,6 +30,7 @@ export default class AuthController {
 
         // Set authAccessToken in res as a header
         res.setHeader('auth-access-token', authAccessToken);
+        res.setHeader('Access-Control-Expose-Headers', 'auth-access-token');
 
         // Return user data without the token in body
         res.json({
@@ -220,6 +221,8 @@ export default class AuthController {
             maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
             sameSite: 'none',
         });
+
+
     }
 
     private static unsetRefreshTokenCookie(res: Response): void {
