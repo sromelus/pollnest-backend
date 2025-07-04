@@ -40,7 +40,8 @@ export default class AuthController {
                 user: {
                     id: user.id,
                     email: user.email,
-                    name: user.name
+                    name: user.name,
+                    role: user.role
                 }
             }
         });
@@ -169,7 +170,6 @@ export default class AuthController {
     // Private methods
     private static async validateCredentials(email: string, password: string): Promise<IUser | null> {
         const user = await User.findOne({ email, verified: true }).select('+password');
-        console.log('*****user*****', user, user?.password)
         if (!user || !await user.comparePassword(password)) {
             return null;
         }
@@ -210,7 +210,7 @@ export default class AuthController {
         if (process.env.NODE_ENV === 'production') {
             await sendEmail(options);
         } else {
-            console.log('options', options);
+            // console.log('options', options);
         }
     }
 

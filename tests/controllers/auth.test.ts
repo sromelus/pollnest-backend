@@ -292,7 +292,9 @@ describe('Auth Controller', () => {
 
         const user = await User.findOne({ email: tempUser.email }) as IUser;
 
-        expect(user.referrerId.toString()).toEqual(referrer.id);
+
+        expect(user.referrerId).not.toEqual(null)
+        expect(user.referrerId!.toString()).toEqual(referrer.id);
       });
 
       it('should fail when verification code is invalid', async () => {
@@ -387,7 +389,7 @@ describe('Auth Controller', () => {
         });
 
         expect(res.status).toBe(400);
-        expect(res.body.message).toContain('lastName: Last name cannot exceed 30 characters, firstName: First name cannot exceed 30 characters');
+        expect(res.body.message).toContain('firstName: First name cannot exceed 30 characters, lastName: Last name cannot exceed 30 characters');
       });
 
       it('should not store password in plain text', async () => {

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import userRoutes from './userRoutes';
 import authRoutes from './authRoutes';
 import pollRoutes from './pollRoutes';
-// import expressListEndpoints from 'express-list-endpoints';
+import expressListEndpoints from 'express-list-endpoints';
 
 const router = Router();
 
@@ -24,6 +24,8 @@ const defaultRoutes = [
 defaultRoutes.forEach(route => {
     router.use(route.path, route.route)
 })
+
+// console.log(expressListEndpoints(router));
 
 export default router;
 

@@ -490,7 +490,8 @@ describe('Vote Controller', () => {
                 const updatedReferrer = await User.findById(referrer.id) as IUser;
 
                 expect(voteRes.status).toBe(201);
-                expect(referredUser.referrerId.toString()).toBe(referrer.id);
+                expect(referredUser.referrerId).not.toBeNull();
+                expect(referredUser.referrerId!.toString()).toBe(referrer.id);
                 expect(updatedReferrer.referralPoints).toBe(referrer.referralPoints + 10);
                 expect(updatedReferrer.referralPoints).not.toBe(20);
             });
