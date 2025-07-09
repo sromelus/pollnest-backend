@@ -167,7 +167,6 @@ export default class AuthController {
         res.status(200).json({ success: true, message: 'User deleted successfully' });
     });
 
-    // Private methods
     private static async validateCredentials(email: string, password: string): Promise<IUser | null> {
         const user = await User.findOne({ email, verified: true }).select('+password');
         if (!user || !await user.comparePassword(password)) {
@@ -218,8 +217,8 @@ export default class AuthController {
         res.cookie('refreshToken', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-            sameSite: 'none',
+            maxAge: 1000 * 60 * 60 * 24 * 7,
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         });
 
 
