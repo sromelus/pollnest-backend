@@ -22,17 +22,25 @@ export const auth = ({ required = true }: AuthOptions = {}) => {
     if (!required) {
       try {
         if (bothTokenValid) {
-          const { decoded, newAuthAccessToken } = await verifyAuthAccessToken(authAccessToken as string, refreshToken as string);
+          const { decoded, newAuthAccessToken, error } = await verifyAuthAccessToken(authAccessToken as string, refreshToken as string);
+
+
+
           if (decoded) {
             req.currentUserId = decoded.currentUserId;
             req.role = decoded.role;
             req.token = newAuthAccessToken;
+          } else if (error && error.name === 'TokenExpiredError') {
+            // Token expired and couldn't refresh
+            // Set authAccessToken in res as a header
+            res.setHeader('X-Token-Expired', 'true');
           }
         }
         // Set defaults if no token or verification fails
         req.currentUserId ??= null;
         req.role ??= null;
         req.token ??= null;
+
         next();
         return;
       } catch (error) {
@@ -71,6 +79,8 @@ export const auth = ({ required = true }: AuthOptions = {}) => {
         });
         return;
       }
+
+
 
       if (newAuthAccessToken) {
         //when the authAccessToken is expired,

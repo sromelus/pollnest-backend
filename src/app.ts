@@ -34,6 +34,7 @@ const startServer = async () => {
     app.use(cors({
       origin: config.allowedOrigins,
       credentials: true,
+      exposedHeaders: ['auth-access-token','X-Token-Expired']
     }));
     logger.info('CORS configured', {
       origins: config.allowedOrigins

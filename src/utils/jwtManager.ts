@@ -94,7 +94,7 @@ export async function verifyAuthAccessToken(accessToken: string, refreshToken: s
                 }
 
                 const newAuthAccessToken = await generateAuthAccessToken(refreshDecoded.currentUserId);
-                return { newAuthAccessToken, decoded: refreshDecoded, error: null };
+                return { newAuthAccessToken, decoded: expiredAccessTokenDecoded, error: null };
             } catch (refreshErr: any) {
                 return { newAuthAccessToken: null, decoded: null, error: refreshErr as Error };
             }

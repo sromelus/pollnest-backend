@@ -30,7 +30,6 @@ export default class AuthController {
 
         // Set authAccessToken in res as a header
         res.setHeader('auth-access-token', authAccessToken);
-        res.setHeader('Access-Control-Expose-Headers', 'auth-access-token');
 
         // Return user data without the token in body
         res.json({
