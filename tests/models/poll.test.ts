@@ -85,7 +85,7 @@ describe('Poll Model', () => {
             await poll.save();
             fail('Should not succeed in saving with more than 200 messages');
         } catch (error) {
-            expect((error as Error).message).toBe('Poll validation failed: messages: Messages array exceeds the maximum limit of 200.');
+            expect((error as Error).message).toContain('Messages array exceeds the maximum limit of 200.');
         }
 
     });

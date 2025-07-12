@@ -1,6 +1,12 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 import { validate } from 'uuid';
 
+// Helper function to get random color
+const getRandomColor = (): string => {
+    const colors = ['#007bff', '#28a745', '#dc3545', '#ffc107', '#17a2b8', '#000000'];
+    return colors[Math.floor(Math.random() * colors.length)];
+};
+
 export type MessageType = {
     userId: string,
     consent: string,
@@ -9,9 +15,11 @@ export type MessageType = {
 
 export type PollOptionType = {
     _id?: string,
-    image: string,
+    image_alt: string,
     pollOptionText: string,
-    count: number
+    count: number,
+    imageUrl: string,
+    color: string
 }
 
 export interface IPoll extends Document {
@@ -72,9 +80,11 @@ const PollSchema = new Schema<IPoll>({
         },
         pollOptions: {
             type: [{
-                image: {type: Schema.Types.String, required: true},
+                image_alt: {type: Schema.Types.String, required: true},
                 pollOptionText: {type: Schema.Types.String, required: true},
-                count: {type: Schema.Types.Number, required: true, default: 0}
+                count: {type: Schema.Types.Number, required: true, default: 0},
+                imageUrl: {type: Schema.Types.String, default: "https://placehold.co/400x500/green/white"},
+                color: {type: Schema.Types.String, default: getRandomColor}
             }],
             validate: {
                 validator: function(pollOptions: Array<PollOptionType>) {

@@ -36,7 +36,26 @@ describe('Vote Controller', () => {
     beforeEach(async () => {
         const user = testUser({ email: 'admin@example.com', role: UserRole.Admin, verified: true });
         await user.save();
-        const pollObj = testPoll({ creatorId: user.id, pollOptions: [{image: 'trump_img', pollOptionText: 'trump', count: 0}, {image: 'kamala_img', pollOptionText: 'kamala', count: 0}], public: true });
+        const pollObj = testPoll({ 
+            creatorId: user.id, 
+            pollOptions: [
+                {
+                    image_alt: 'trump_img', 
+                    pollOptionText: 'trump', 
+                    count: 0,
+                    imageUrl: "https://placehold.co/400x500/green/white",
+                    color: '#007bff'
+                }, 
+                {
+                    image_alt: 'kamala_img', 
+                    pollOptionText: 'kamala', 
+                    count: 0,
+                    imageUrl: "https://placehold.co/400x500/green/white",
+                    color: '#28a745'
+                }
+            ], 
+            public: true 
+        });
         await pollObj.save();
         poll = pollObj as IPoll;
         voterId = user.id;

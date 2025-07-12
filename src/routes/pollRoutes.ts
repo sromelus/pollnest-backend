@@ -47,6 +47,7 @@ router.get('/:pollId/chat', auth({ required: false }), ChatController.getChat);
 router.get('/', auth({ required: false }), PollsController.listPolls);
 router.post('/', auth(), validatePoll, PollsController.createPoll);
 router.get('/:pollId', auth({ required: false }), PollsController.getPoll);
+router.get('/slug/:slug', auth({ required: false }), PollsController.getPollBySlug);
 router.get('/:pollId/options', auth({ required: false }), PollsController.getPollOptions);
 router.put('/:pollId', auth(), validatePollUpdate, PollsController.updatePoll);
 router.delete('/:pollId', auth(), PollsController.deletePoll);

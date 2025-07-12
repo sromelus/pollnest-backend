@@ -186,8 +186,23 @@ describe('Poll Controller', () => {
             .send({
                 title: 'Test Poll',
                 description: 'This is a test poll',
-                pollOptions: [{image: 'trump_img', pollOptionText: 'trump', count: 0}, {image: 'kamala_img', pollOptionText: 'kamala', count: 0}],
-                creatorId: creatorId,
+                pollOptions: [
+                    {
+                        image_alt: 'trump_img', 
+                        pollOptionText: 'trump', 
+                        count: 0,
+                        imageUrl: "https://placehold.co/400x500/green/white",
+                        color: '#007bff'
+                    }, 
+                    {
+                        image_alt: 'kamala_img', 
+                        pollOptionText: 'kamala', 
+                        count: 0,
+                        imageUrl: "https://placehold.co/400x500/green/white",
+                        color: '#28a745'
+                    }
+                ],
+                creatorId: creatorId
             });
 
             expect(res.status).toBe(201);
@@ -204,7 +219,13 @@ describe('Poll Controller', () => {
                 // description: 'This is a test poll',
                 // creatorId: creatorId,
                 pollOptions: [
-                    {image: 'trump_img', pollOptionText: 'trump', count: 0},
+                    {
+                        image_alt: 'trump_img', 
+                        pollOptionText: 'trump', 
+                        count: 0,
+                        imageUrl: "https://placehold.co/400x500/green/white",
+                        color: '#007bff'
+                    },
                     // {image: 'kamala_img', pollOptionText: 'kamala', count: 0}
                 ],
             });
