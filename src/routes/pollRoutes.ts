@@ -37,6 +37,8 @@ router.post('/:pollId/public_poll_share_link', auth(), PollAccessController.crea
 router.get('/public_poll_access/:accessToken', PollAccessController.accessPublicPoll);
 
 // Votes routes
+router.get('/:pollId/votes', auth({ required: false }), VotesController.getVotes);
+router.get('/:pollId/voters', auth({ required: false }), VotesController.getPollVoters);
 router.post('/:pollId/votes', auth({ required: false }), validateVote, VotesController.createVote);
 
 // Chat routes

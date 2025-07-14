@@ -1,7 +1,7 @@
 import '../loadEnvironmentVariables';
 import { RequestHandler } from 'express';
 import { Poll, Vote, User, IUser } from '../models';
-import { Document } from 'mongoose';
+import mongoose, { Document } from 'mongoose';
 import { tryCatch, voterLocationInfo } from '../utils';
 
 type PollOption = {
@@ -17,6 +17,12 @@ interface IPoll extends Document {
 
 
 export default class VotesController {
+    static getVotes: RequestHandler = tryCatch(async (req, res) => {
+        const { pollId } = req.params;
+        const votes = await Vote.find({ pollId });
+        res.status(200).json({ success: true, data: { votes } });
+    });
+
     static createVote: RequestHandler = tryCatch(async (req, res) => {
         // just need to create a vote, no need to check for auth
         // we should abstract this to a query object or something
@@ -108,6 +114,92 @@ export default class VotesController {
             }
         });
     });
+
+    static getPollVoters: RequestHandler = tryCatch(async (req, res) => {
+        const { pollId } = req.params;
+
+        // First, verify the poll exists
+        const poll = await Poll.findById(pollId);
+        if (!poll) {
+            res.status(404).json({ 
+                success: false, 
+                message: 'Poll not found' 
+            });
+            return;
+        }
+
+        // Get all votes for this poll, including anonymous ones
+        const allVotes = await Vote.find({ pollId: new mongoose.Types.ObjectId(pollId) })
+            .populate('voterId', 'firstName lastName email points voteCount')
+            .sort({ createdAt: -1 });
+
+        // Separate registered and anonymous votes
+        const registeredVotes = allVotes.filter(vote => vote.voterId != null);
+        const anonymousVotes = allVotes.filter(vote => vote.voterId == null);
+
+        // Group registered votes by voterId
+        const votesByUser = registeredVotes.reduce((acc: Record<string, any[]>, vote: any) => {
+            const userId = vote.voterId?.toString();
+            if (userId) {
+                if (!acc[userId]) {
+                    acc[userId] = [];
+                }
+                acc[userId].push(vote);
+            }
+            return acc;
+        }, {} as Record<string, any[]>);
+
+        // Build the response for each user
+        const voters = Object.entries(votesByUser).map( ([userId, userVotes]: [string, any[]]) => {
+            const firstVote = userVotes[0];
+            const user = firstVote.voterId as any;
+
+            // Group this user's votes by voteOptionText and count them
+            const votesByOption = userVotes.reduce((acc: Record<string, any[]>, vote: any) => {
+                const optionText = vote.voteOptionText;
+                if (!acc[optionText]) {
+                    acc[optionText] = [];
+                }
+                acc[optionText].push(vote);
+                return acc;
+            }, {} as Record<string, any[]>);
+
+            // Create pollOptions array with user's vote counts for each option
+            const pollOptions = poll.pollOptions.map(option => {
+                const userVotesForOption = votesByOption[option.pollOptionText] || [];
+                
+                return {
+                    id: option._id?.toString(),
+                    voteOptionText: option.pollOptionText,
+                    totalVotes: userVotesForOption.length
+                };
+            });
+
+            return {
+                user: {
+                    id: user?._id?.toString(),
+                    name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim(),
+                    email: user?.email,
+                },
+                pollOptions
+            };
+        });
+
+        res.status(200).json({ 
+            success: true, 
+            message: 'Poll voters fetched successfully',
+            data: { 
+                poll: {
+                    id: poll._id,
+                    title: poll.title,
+                    allowMultipleVotes: poll.allowMultipleVotes
+                },
+                voters,
+                allVotes: allVotes[0]
+            } 
+        });
+    });
+
 }
 
 // import { v4 as uuidv4 } from 'uuid';
