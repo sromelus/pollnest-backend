@@ -191,6 +191,9 @@ export default class VotesController {
             };
         });
 
+        // Sort voters by their mostVotes count (highest first)
+        voters.sort((a, b) => b.mostVotes.totalVotes - a.mostVotes.totalVotes);
+
         res.status(200).json({ 
             success: true, 
             message: 'Poll voters fetched successfully',
