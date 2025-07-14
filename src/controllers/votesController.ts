@@ -164,10 +164,10 @@ export default class VotesController {
                 return acc;
             }, {} as Record<string, any[]>);
 
-            // Create pollOptions array with user's vote counts for each option
-            const pollOptions = poll.pollOptions.map(option => {
+            // Create votes array with user's vote counts for each option
+            const votes = poll.pollOptions.map(option => {
                 const userVotesForOption = votesByOption[option.pollOptionText] || [];
-                
+
                 return {
                     id: option._id?.toString(),
                     voteOptionText: option.pollOptionText,
@@ -175,13 +175,19 @@ export default class VotesController {
                 };
             });
 
+            // Find the poll option with the most votes for this user
+            const mostVotes = votes.reduce((max, current) => 
+                current.totalVotes > max.totalVotes ? current : max
+            );
+
             return {
                 user: {
                     id: user?._id?.toString(),
                     name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim(),
                     email: user?.email,
                 },
-                pollOptions
+                votes,
+                mostVotes,
             };
         });
 
@@ -195,8 +201,7 @@ export default class VotesController {
                     allowMultipleVotes: poll.allowMultipleVotes
                 },
                 voters,
-                allVotes: allVotes[0]
-            } 
+            }
         });
     });
 
