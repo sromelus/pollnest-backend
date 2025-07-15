@@ -117,6 +117,7 @@ export default class VotesController {
 
     static getPollVoters: RequestHandler = tryCatch(async (req, res) => {
         const { pollId } = req.params;
+        const { currentUserId } = (req as any);
 
         // First, verify the poll exists
         const poll = await Poll.findById(pollId);
@@ -133,6 +134,7 @@ export default class VotesController {
             .populate('voterId', 'firstName lastName email points voteCount')
             .sort({ createdAt: -1 });
 
+
         // Separate registered and anonymous votes
         const registeredVotes = allVotes.filter(vote => vote.voterId != null);
         const anonymousVotes = allVotes.filter(vote => vote.voterId == null);
@@ -148,6 +150,7 @@ export default class VotesController {
             }
             return acc;
         }, {} as Record<string, any[]>);
+
 
         // Build the response for each user
         const voters = Object.entries(votesByUser).map( ([userId, userVotes]: [string, any[]]) => {
@@ -194,17 +197,22 @@ export default class VotesController {
         // Sort voters by their mostVotes count (highest first)
         voters.sort((a, b) => b.mostVotes.totalVotes - a.mostVotes.totalVotes);
 
+        // Load current user's votes if currentUserId is present
+        let currentUser = null;
+        if (currentUserId) {
+            currentUser = voters.find((voter: any) => voter.user.id === currentUserId);
+        }
+
         res.status(200).json({ 
             success: true, 
             message: 'Poll voters fetched successfully',
-            data: { 
-                poll: {
-                    id: poll._id,
-                    title: poll.title,
-                    allowMultipleVotes: poll.allowMultipleVotes
-                },
-                voters,
-            }
+            poll: {
+                id: poll._id,
+                title: poll.title,
+                allowMultipleVotes: poll.allowMultipleVotes
+            },
+            voters: voters.slice(0, 10),
+            currentUser,
         });
     });
 
