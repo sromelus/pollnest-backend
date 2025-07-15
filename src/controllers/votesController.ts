@@ -197,6 +197,11 @@ export default class VotesController {
         // Sort voters by their mostVotes count (highest first)
         voters.sort((a, b) => b.mostVotes.totalVotes - a.mostVotes.totalVotes);
 
+        // Add rank to each voter based on their position after sorting
+        voters.forEach((voter: any, index: number) => {
+            voter.rank = index + 1;
+        });
+
         // Load current user's votes if currentUserId is present
         let currentUser = null;
         if (currentUserId) {
