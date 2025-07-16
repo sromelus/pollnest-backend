@@ -28,9 +28,7 @@ describe('Vote Model', () => {
                 pollId: savedPoll.id,
                 voterId: subscriber.id,
                 voteOptionText: 'trump',
-                pollOptionId: (savedPoll.pollOptions[0] as any)._id,
-                voterEthnicity: 'white',
-                voterGender: 'male'
+                pollOptionId: (savedPoll.pollOptions[0] as any)._id
             })
 
         const savedVote = await vote.save();

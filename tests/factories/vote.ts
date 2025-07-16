@@ -9,9 +9,7 @@ export const testVote = (options: Partial<IVote>): IVote => {
             voterIp: '127.0.0.1',
             voterCountry: 'US',
             voterRegion: 'MA',
-            voterCity: 'Boston',
-            voterEthnicity: 'Black',
-            voterGender: 'male'
+            voterCity: 'Boston'
         }
 
         const mergedOptions = { ...defaults, ...options };

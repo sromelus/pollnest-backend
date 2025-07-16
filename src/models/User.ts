@@ -27,6 +27,8 @@ export interface IUser extends Document {
     verificationCode: string | null;
     lastLoginAt?: Date | null;
     lastLogoutAt?: Date | null;
+    ethnicity?: string;
+    gender?: string;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -129,6 +131,14 @@ const UserSchema = new Schema<IUser>({
         lastLogoutAt: {
             type: Schema.Types.Date,
             default: null
+        },
+        ethnicity: {
+            type: Schema.Types.String,
+            required: false
+        },
+        gender: {
+            type: Schema.Types.String,
+            required: false
         }
     },
     {

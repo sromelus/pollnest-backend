@@ -80,8 +80,6 @@ describe('Vote Controller', () => {
                     .send({
                         pollId: poll.id,
                         voterId,
-                        voterEthnicity: 'black',
-                        voterGender: 'male',
                         voteOptionText: 'kamala',
                         pollOptionId: kamalaOption._id,
                         voterIp: '127.0.0.1',
@@ -106,8 +104,6 @@ describe('Vote Controller', () => {
                     .send({
                         pollId: poll.id,
                         voterId,
-                        voterEthnicity: 'black',
-                        voterGender: 'male',
                         voteOptionText: 'kamala',
                         pollOptionId: kamalaOption._id,
                         voterIp: '127.0.0.1',
@@ -138,8 +134,6 @@ describe('Vote Controller', () => {
                 const res = await request(app).post(`/api/v1/polls/${poll.id}/votes`).set('Authorization', `Bearer ${accessToken}`).send({
                     pollId: poll.id,
                     voterId,
-                    voterEthnicity: 'black',
-                    voterGender: 'male',
                     voteOptionText: 'kamala',
                     pollOptionId: '67a2fc834e011d27320e4e79',
                     voterIp: '127.0.0.1',
@@ -164,8 +158,6 @@ describe('Vote Controller', () => {
                     .send({
                         pollId: poll.id,
                     //   voterId = null
-                        voterEthnicity: 'black',
-                        voterGender: 'male',
                         voteOptionText: 'kamala',
                         pollOptionId: kamalaOption._id,
                         voterIp: '127.0.0.1',
@@ -191,8 +183,6 @@ describe('Vote Controller', () => {
                     .send({
                         pollId: poll.id,
                     //   voterId = null
-                        voterEthnicity: 'black',
-                        voterGender: 'male',
                         voteOptionText: 'kamala',
                         pollOptionId: kamalaOption._id,
                         voterIp: '127.0.0.1',
@@ -221,8 +211,6 @@ describe('Vote Controller', () => {
                     .send({
                         pollId: poll.id,
                     //   voterId = null
-                        voterEthnicity: 'black',
-                        voterGender: 'male',
                         voteOptionText: 'kamala',
                         pollOptionId: kamalaOption._id,
                         voterIp: '127.0.0.1',
@@ -258,8 +246,6 @@ describe('Vote Controller', () => {
                     .send({
                         pollId: poll.id,
                         voterId,
-                        voterEthnicity: 'black',
-                        voterGender: 'male',
                         voteOptionText: 'kamala',
                         pollOptionId: kamalaOption._id,
                         voterIp: '127.0.0.1',
@@ -287,8 +273,6 @@ describe('Vote Controller', () => {
                     .send({
                         pollId: poll.id,
                         // voterId: undefined, non-registered user voterId
-                        voterEthnicity: 'black',
-                        voterGender: 'male',
                         voteOptionText: 'kamala',
                         pollOptionId: kamalaOption._id,
                         voterIp: '127.0.0.1',
@@ -315,8 +299,6 @@ describe('Vote Controller', () => {
                     .send({
                         pollId: poll.id,
                         voterId,
-                        voterEthnicity: 'black',
-                        voterGender: 'male',
                         voteOptionText: 'kamala',
                         pollOptionId: kamalaOption._id,
                         voterIp: '127.0.0.1',
@@ -339,8 +321,6 @@ describe('Vote Controller', () => {
                     .send({
                         pollId: poll.id,
                         // voterId: null non-authenticated user voterId
-                        voterEthnicity: 'black',
-                        voterGender: 'male',
                         voteOptionText: 'kamala',
                         pollOptionId: kamalaOption._id,
                         voterIp: '127.0.0.1',
@@ -363,8 +343,6 @@ describe('Vote Controller', () => {
                     .send({
                         pollId: poll.id,
                         voterId,
-                        voterEthnicity: 'black',
-                        voterGender: 'male',
                         voteOptionText: 'kamala',
                         pollOptionId: kamalaOption._id,
                         voterIp: '127.0.0.1',
@@ -393,8 +371,6 @@ describe('Vote Controller', () => {
                     .send({
                         pollId: poll.id,
                         voterId,
-                        voterEthnicity: 'black',
-                        voterGender: 'male',
                         voteOptionText: 'kamala',
                         pollOptionId: kamalaOption._id,
                         voterIp: '127.0.0.1',
@@ -416,8 +392,6 @@ describe('Vote Controller', () => {
                     .send({
                         pollId: poll.id,
                         voterId,
-                        voterEthnicity: 'black',
-                        voterGender: 'male',
                         voteOptionText: 'kamala',
                         pollOptionId: kamalaOption._id,
                         voterIp: '127.0.0.1',
@@ -441,8 +415,6 @@ describe('Vote Controller', () => {
                     .post(`/api/v1/polls/${poll.id}/votes`)
                     .send({
                         pollId: poll.id,
-                        voterEthnicity: 'black',
-                        voterGender: 'male',
                         voteOptionText: 'kamala',
                         pollOptionId: kamalaOption._id,
                         voterIp: '127.0.0.1',
@@ -497,8 +469,6 @@ describe('Vote Controller', () => {
                     .send({
                         pollId: poll.id,
                         voterId: referredUser.id,
-                        voterEthnicity: 'black',
-                        voterGender: 'male',
                         voteOptionText: poll.pollOptions[1].pollOptionText,
                         pollOptionId: poll.pollOptions[1]._id,
                     });
@@ -555,9 +525,7 @@ describe('Vote Controller', () => {
                     .set('Cookie', `refreshToken=${null}`)
                     .send({
                         pollId: pollAccessWithTokenData._id,
-                        voterEthnicity: 'black',
                         voterId: userWithAccessToken.id,
-                        voterGender: 'male',
                         voteOptionText: pollAccessWithTokenData.pollOptions[1].pollOptionText,
                         pollOptionId: pollAccessWithTokenData.pollOptions[1]._id,
                     });

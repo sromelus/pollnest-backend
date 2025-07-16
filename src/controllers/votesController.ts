@@ -229,8 +229,6 @@ export default class VotesController {
 // import VoteTally from '../models/VoteTally';
 
 // interface Votes {
-//   voterEthnicity: string;
-//   voterGender: string;
 //   candidate: string;
 //   voterId: string;
 //   chatMessage?: string;
@@ -307,7 +305,7 @@ export default class VotesController {
 //         let sessionId = req.cookies?.sessionId;
 //         const clientInfo = getClientInfo(req);
 
-//         const { candidate, voterEthnicity, voterGender, chatMessage } = req.body as Votes;
+//         const { candidate, chatMessage } = req.body as Votes;
 
 //         if (!sessionId) {
 //             sessionId = uuidv4();
@@ -341,9 +339,7 @@ export default class VotesController {
 //             voterIp: Math.floor(Math.random() * 1000) || clientInfo.ip,
 //             voterCountry,
 //             voterRegion,
-//             voterCity,
-//             voterEthnicity,
-//             voterGender
+//             voterCity
 //         });
 
 //         await VoteTally.findOneAndUpdate(

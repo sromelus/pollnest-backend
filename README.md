@@ -52,8 +52,6 @@ yarn start:prod
 - Rate limit: 3 requests per 24 hours
 - Required body parameters:
   - candidate: "kamala" | "trump"
-  - voterEthnicity: string
-  - voterGender: string
 
 ## Security Features
 

@@ -9,8 +9,6 @@ export interface IVote extends Document {
   voterCountry: string,
   voterRegion: string,
   voterCity: string,
-  voterEthnicity: string;
-  voterGender: string;
 }
 
 const VoteSchema = new Schema<IVote>({
@@ -94,12 +92,6 @@ const VoteSchema = new Schema<IVote>({
     voterCity: {
       type: Schema.Types.String,
       required: false
-    },
-    voterEthnicity: {
-      type: Schema.Types.String,
-    },
-    voterGender: {
-      type: Schema.Types.String,
     }
   },
   {
